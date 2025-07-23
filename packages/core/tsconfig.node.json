@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "tsBuildInfoFile": "./node_modules/.tsbuildinfo",
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "allowJs": true,
+    "checkJs": true,
+    "jsx": "react-jsx",
+    "types": ["node"],
+    "lib": ["ESNext", "DOM"]
+  },
+  "include": ["vite.config.ts"]
+}
