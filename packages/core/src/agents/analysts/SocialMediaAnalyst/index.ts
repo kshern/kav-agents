@@ -3,7 +3,7 @@
  * @description 定义了用于分析社交媒体情绪的函数。
  */
 
-import { fetchTopFromCategory } from "../../../dataflows/redditUtils";
+// import { fetchTopFromCategory } from "../../../dataflows/redditUtils";
 import { fillPromptTemplate } from "../../utils";
 import { SocialMediaAnalystProps, SocialMediaPost } from "../../../types";
 import socialTemplate from "./social.md?raw";
@@ -41,14 +41,14 @@ export async function analyzeSocialMedia(props: {
 
   try {
     // 1. 获取 Reddit 数据
-    const redditPosts = await fetchTopFromCategory(
-      "company_news",
-      trade_date,
-      20,
-      company_of_interest,
-      "reddit_data"
-    );
-
+    // const redditPosts = await fetchTopFromCategory(
+    //   "company_news",
+    //   trade_date,
+    //   20,
+    //   company_of_interest,
+    //   "reddit_data"
+    // );
+    const redditPosts: SocialMediaPost[] = [];
     if (redditPosts.length === 0) {
       return { sentiment_report: "未找到相关的社交媒体帖子。" };
     }
@@ -61,7 +61,7 @@ export async function analyzeSocialMedia(props: {
 
     const result = await generateContent({
       modelName: "gemini-2.5-flash",
-      prompt
+      prompt,
     });
 
     return { sentiment_report: result };

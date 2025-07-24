@@ -150,6 +150,10 @@ export interface FundamentalsAnalystProps {
    * @property {string} company_of_interest - 公司名称
    */
   company_of_interest: string;
+  /**
+   * @property {string} model_name - 模型名称
+   */
+  model_name: string;
 }
 
 /**

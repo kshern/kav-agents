@@ -3,13 +3,11 @@
  * @description 定义了用于分析和总结新闻的函数。
  */
 
-import { getNewsData } from "../../../dataflows/googleNewsUtils";
+import { getNewsFromApi } from "../../../dataflows/newsApiUtils";
 import { fillPromptTemplate } from "../../utils";
 import { NewsArticle } from "../../../types";
 import newsTemplate from "./news.md?raw";
 import { generateContent } from "../../utils/geminiUtils";
-
-
 
 /**
  * 格式化新闻文章列表为字符串。
@@ -38,17 +36,26 @@ function formatNewsArticles(articles: NewsArticle[]): string {
  */
 export async function analyzeNews(props: {
   company_of_interest: string;
+  model_name: string;
   trade_date: string;
 }): Promise<{ news_report: string }> {
-  const { company_of_interest, trade_date } = props;
+  const { company_of_interest, model_name, trade_date } = props;
 
   try {
     // 1. 获取新闻数据
-    const newsArticles = await getNewsData(
+    // NewsAPI.org 免费版仅支持查询过去一个月的新闻
+    // 因此，我们将起始日期设置为 trade_date 的前28天
+    const toDate = new Date(trade_date);
+    const fromDate = new Date(toDate);
+    fromDate.setDate(toDate.getDate() - 28);
+
+    const formatDate = (date: Date) => date.toISOString().split("T")[0];
+
+    const newsArticles = await getNewsFromApi(
       company_of_interest,
-      "2024-01-01",
-      trade_date
-    ); // 注意：起始日期是硬编码的
+      formatDate(fromDate),
+      formatDate(toDate)
+    );
 
     if (newsArticles.length === 0) {
       return { news_report: "未找到相关新闻。" };
@@ -62,8 +69,8 @@ export async function analyzeNews(props: {
 
     // 3. 调用模型生成报告
     const result = await generateContent({
-      modelName: "gemini-2.5-flash",
-      prompt
+      modelName: model_name,
+      prompt,
     });
 
     return { news_report: result };
