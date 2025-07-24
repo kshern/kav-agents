@@ -60,7 +60,7 @@ export async function analyzeSocialMedia(props: {
     });
 
     const result = await generateContent({
-      modelName: "gemini-2.0-flash-lite",
+      modelName: "gemini-2.5-flash",
       prompt
     });
 
