@@ -24,6 +24,8 @@
     "axios": "^1.11.0",
     "cheerio": "^1.1.2",
     "exponential-backoff": "^3.1.2",
-    "yahoo-finance2": "^2.13.3"
+    "yahoo-finance2": "^2.13.3",
+    "@langchain/core": "^0.2.10",
+    "@langchain/google-genai": "^0.0.21"
   }
 }

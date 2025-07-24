@@ -185,19 +185,6 @@ export interface NewsAnalystProps {
   newsArticles: NewsArticle[];
 }
 
-// 定义社交媒体帖子的结构
-export interface SocialMediaPost {
-  title: string; // 标题
-  content: string; // 内容
-  upvotes: number; // 赞数
-  url: string; // 链接
-}
-
-// 定义 SocialMediaAnalyst Agent 的输入参数类型
-export interface SocialMediaAnalystProps {
-  redditPosts: SocialMediaPost[]; // Reddit 帖子列表
-}
-
 // 定义 ResearchManager Agent 的输入参数类型
 export interface ResearchManagerProps {
   pastMemories: string; // 过去的记忆或反思

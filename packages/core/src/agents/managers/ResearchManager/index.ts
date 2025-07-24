@@ -3,7 +3,6 @@
  * @description 定义了用于管理研究流程、主持辩论并制定投资计划的函数。
  */
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { InvestDebateState } from "../../../models/agentStates";
 import { fillPromptTemplate } from "../../utils";
 import researchTemplate from "./research.md?raw";
