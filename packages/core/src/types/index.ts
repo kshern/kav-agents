@@ -3,6 +3,8 @@
  * @description 核心共享类型定义
  */
 
+import { InvestDebateState, RiskDebateState } from "../models/agentStates";
+
 /**
  * 定义了可以对游戏状态值执行的比较操作符。
  */
@@ -134,3 +136,81 @@ export type Property =
   | BooleanProperty
   | NumberProperty
   | ActionProperty;
+
+/**
+ * @interface FundamentalsAnalystProps
+ * @description 基本面分析师的属性
+ */
+export interface FundamentalsAnalystProps {
+  /**
+   * @property {string} trade_date - 交易日期
+   */
+  trade_date: string;
+  /**
+   * @property {string} company_of_interest - 公司名称
+   */
+  company_of_interest: string;
+}
+
+/**
+ * @interface MarketAnalystProps
+ * @description 市场分析师的属性
+ */
+export interface MarketAnalystProps {
+  trade_date: string;
+  company_of_interest: string;
+  stockInfo: any;
+  recommendations: any;
+  stockData: any;
+}
+
+// 定义新闻文章的结构
+export interface NewsArticle {
+  title: string; // 标题
+  link: string; // 链接
+  source: string; // 来源
+  snippet: string; // 摘要
+  date: string; // 日期
+}
+
+/**
+ * @interface NewsAnalystProps
+ * @description 新闻分析师的属性
+ */
+export interface NewsAnalystProps {
+  newsArticles: NewsArticle[];
+}
+
+// 定义社交媒体帖子的结构
+export interface SocialMediaPost {
+  title: string; // 标题
+  content: string; // 内容
+  upvotes: number; // 赞数
+  url: string; // 链接
+}
+
+// 定义 SocialMediaAnalyst Agent 的输入参数类型
+export interface SocialMediaAnalystProps {
+  redditPosts: SocialMediaPost[]; // Reddit 帖子列表
+}
+
+// 定义 ResearchManager Agent 的输入参数类型
+export interface ResearchManagerProps {
+  pastMemories: string; // 过去的记忆或反思
+  investment_debate_state: InvestDebateState; // 投资辩论状态
+}
+
+// 定义 RiskManager Agent 的输入参数类型
+export type RiskManagerProps = {
+  investment_plan: string;
+  risk_debate_state: RiskDebateState;
+};
+
+/**
+ * @description Trader Agent 的 props
+ */
+export type TraderProps = {
+  company_of_interest: string;
+  investment_plan: string;
+  pastMemories: string;
+};
