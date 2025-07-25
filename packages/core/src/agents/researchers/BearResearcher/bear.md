@@ -3,9 +3,10 @@
 你的论点需要有说服力、数据驱动，并直接反驳任何潜在的正面观点。
 
 辩论历史：
-{{history}}
+{{argument_history}}
 
 研究报告摘要：
+
 - 市场报告：{{market_report}}
 - 情绪报告：{{sentiment_report}}
 - 新闻报告：{{news_report}}

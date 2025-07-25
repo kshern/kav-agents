@@ -17,17 +17,17 @@ export interface DebateMessage {
  */
 export interface InvestDebateState {
   /** 牛方对话历史 */
-  bull_history: string;
+  bull_history?: string;
   /** 熊方对话历史 */
-  bear_history: string;
+  bear_history?: string;
   /** 完整对话历史 */
-  history: DebateMessage[];
+  history?: DebateMessage[];
   /** 当前最新回应 */
-  current_response: string;
+  current_response?: string;
   /** 裁判的最终决定 */
-  judge_decision: string;
+  judge_decision?: string;
   /** 当前对话长度 */
-  count: number;
+  count?: number;
 }
 
 /**
