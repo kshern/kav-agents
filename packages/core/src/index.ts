@@ -6,3 +6,4 @@ export * from './agents/analysts/FundamentalsAnalyst';
 export * from './agents/analysts/MarketAnalyst';
 export * from './agents/analysts/NewsAnalyst';
 export * from './agents/analysts/SocialMediaAnalyst';
+export * from './agents/managers/ResearchManager';

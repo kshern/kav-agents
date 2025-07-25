@@ -138,6 +138,17 @@ export type Property =
   | ActionProperty;
 
 /**
+ * @interface Model
+ * @description 模型的属性
+ */
+export interface Model {
+  /** 模型名称 */
+  model_name: string;
+  /** API 密钥 */
+  api_key?: string;
+}
+
+/**
  * @interface FundamentalsAnalystProps
  * @description 基本面分析师的属性
  */
@@ -151,9 +162,9 @@ export interface FundamentalsAnalystProps {
    */
   company_of_interest: string;
   /**
-   * @property {string} model_name - 模型名称
+   * @property {Model} modelConfig - 模型配置
    */
-  model_name: string;
+  modelConfig: Model;
 }
 
 /**

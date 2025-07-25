@@ -5,7 +5,7 @@
 
 import { getNewsFromApi } from "../../../dataflows/newsApiUtils";
 import { fillPromptTemplate } from "../../utils";
-import { NewsArticle } from "../../../types";
+import { Model, NewsArticle } from "../../../types";
 import newsTemplate from "./news.md?raw";
 import { generateContent } from "../../utils/geminiUtils";
 
@@ -36,10 +36,10 @@ function formatNewsArticles(articles: NewsArticle[]): string {
  */
 export async function analyzeNews(props: {
   company_of_interest: string;
-  model_name: string;
+  modelConfig: Model;
   trade_date: string;
 }): Promise<{ news_report: string }> {
-  const { company_of_interest, model_name, trade_date } = props;
+  const { company_of_interest, modelConfig, trade_date } = props;
 
   try {
     // 1. 获取新闻数据
@@ -69,7 +69,7 @@ export async function analyzeNews(props: {
 
     // 3. 调用模型生成报告
     const result = await generateContent({
-      modelName: model_name,
+      modelConfig,
       prompt,
     });
 

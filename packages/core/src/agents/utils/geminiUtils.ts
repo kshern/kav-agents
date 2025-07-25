@@ -4,6 +4,7 @@
  */
 
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { Model } from "../../types";
 
 // 默认的 API 密钥，在没有提供时使用
 // 注意：在生产环境中应使用环境变量
@@ -12,20 +13,20 @@ export const API_KEY = "AIzaSyB66lcLvrIz1fi5kQD9Xdf-pY01kk2gEKY";
 /**
  * 使用指定的模型生成内容。
  *
- * @param modelName - 用于生成内容的模型名称。
+ * @param modelConfig - 用于生成内容的模型配置。
  * @param prompt - 提供给模型的提示。
  * @returns - 返回一个包含生成内容的对象。
  */
 export async function generateContent({
-  modelName,
+  modelConfig,
   prompt,
 }: {
-  modelName: string;
+  modelConfig: Model;
   prompt: string;
 }): Promise<string> {
   const model = new ChatGoogleGenerativeAI({
-    apiKey: API_KEY,
-    modelName,
+    apiKey: modelConfig.api_key || API_KEY,
+    modelName: modelConfig.model_name,
   });
 
   const response = await model.invoke(prompt);

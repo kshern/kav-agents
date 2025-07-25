@@ -16,7 +16,7 @@ import { FundamentalsAnalystProps } from "../../../types";
 export async function analyzeFundamentals(
   props: FundamentalsAnalystProps
 ): Promise<{ fundamentals_report: string }> {
-  const { company_of_interest, model_name, trade_date } = props;
+  const { company_of_interest, modelConfig, trade_date } = props;
 
   const prompt = fillPromptTemplate(template, {
     trade_date,
@@ -25,7 +25,7 @@ export async function analyzeFundamentals(
 
   try {
     const result = await generateContent({
-      modelName: model_name,
+      modelConfig,
       prompt,
     });
 

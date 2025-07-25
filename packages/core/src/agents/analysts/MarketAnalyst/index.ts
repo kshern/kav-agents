@@ -6,6 +6,7 @@ import { generateContent } from "../../utils/geminiUtils";
 import { fillPromptTemplate } from "../../utils";
 import template from "./market.md?raw";
 import { getStockData } from "../../../dataflows/alphaVantageUtils";
+import { Model } from "../../../types";
 
 /**
  * 分析给定公司的市场信息并生成报告。
@@ -15,10 +16,10 @@ import { getStockData } from "../../../dataflows/alphaVantageUtils";
  */
 export async function analyzeMarket(props: {
   company_of_interest: string;
-  model_name: string;
+  modelConfig: Model;
   trade_date: string;
 }): Promise<{ market_report: string }> {
-  const { company_of_interest, model_name, trade_date } = props;
+  const { company_of_interest, modelConfig, trade_date } = props;
 
   try {
     // 1. 获取原始数据
@@ -37,7 +38,7 @@ export async function analyzeMarket(props: {
 
     // 3. 调用模型生成报告
     const result = await generateContent({
-      modelName: model_name,
+      modelConfig,
       prompt,
     });
 

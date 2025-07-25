@@ -13,9 +13,8 @@
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^24.0.7",
-    "@types/react": "^19.1.8"
-  },
-  "dependencies": {
-    "@google/generative-ai": "^0.24.1"
+    "@types/react": "^19.1.8",
+    "vite": "^7.0.6",
+    "@vitejs/plugin-react": "^4.5.2"
   }
 }

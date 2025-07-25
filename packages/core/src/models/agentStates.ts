@@ -3,6 +3,15 @@
  */
 
 /**
+ * 辩论消息
+ * @description 定义了辩论历史中单条消息的结构
+ */
+export interface DebateMessage {
+  role: "human" | "ai";
+  content: string;
+}
+
+/**
  * 投资辩论状态
  * @description 用于记录投资研究团队（牛方 vs 熊方）的辩论过程。
  */
@@ -12,7 +21,7 @@ export interface InvestDebateState {
   /** 熊方对话历史 */
   bear_history: string;
   /** 完整对话历史 */
-  history: string;
+  history: DebateMessage[];
   /** 当前最新回应 */
   current_response: string;
   /** 裁判的最终决定 */
