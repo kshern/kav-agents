@@ -4,9 +4,10 @@
  */
 
 import { RiskDebateState } from "../../../models/agentStates";
-import { fillPromptTemplate } from "../../utils";
+import { parseAndRenderTemplate } from "../../../utils";
 import riskTemplate from "./risk.md?raw";
-import { generateContent } from "../../utils/geminiUtils";
+import { generateContent } from "../../../utils/geminiUtils";
+import { Model } from "../../../types";
 
 /**
  * 整合所有分析报告和交易员计划，评估风险辩论，并生成最终的交易决策。
@@ -18,13 +19,14 @@ export async function manageRisk(props: {
   risk_debate_state: RiskDebateState;
   investment_plan: string;
   pastMemories: string;
+  modelConfig?: Model;
 }): Promise<{
   risk_debate_state: RiskDebateState;
   final_trade_decision: string;
 }> {
-  const { risk_debate_state, investment_plan, pastMemories } = props;
+  const { risk_debate_state, investment_plan, pastMemories, modelConfig } = props;
 
-  const prompt = fillPromptTemplate(riskTemplate, {
+  const prompt = parseAndRenderTemplate(riskTemplate, {
     investment_plan: investment_plan,
     past_memories: pastMemories,
     risk_debate_history: risk_debate_state.history,
@@ -32,7 +34,7 @@ export async function manageRisk(props: {
 
   try {
     const result = await generateContent({
-      modelName: "gemini-2.5-flash",
+      modelConfig: modelConfig || { model_name: "gemini-2.5-flash" },
       prompt
     });
 

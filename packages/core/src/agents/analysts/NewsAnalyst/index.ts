@@ -4,10 +4,10 @@
  */
 
 import { getNewsFromApi } from "../../../dataflows/newsApiUtils";
-import { fillPromptTemplate } from "../../utils";
+import { parseAndRenderTemplate } from "../../../utils";
 import { Model, NewsArticle } from "../../../types";
 import newsTemplate from "./news.md?raw";
-import { generateContent } from "../../utils/geminiUtils";
+import { generateContent } from "../../../utils/geminiUtils";
 
 /**
  * 格式化新闻文章列表为字符串。
@@ -63,7 +63,7 @@ export async function analyzeNews(props: {
 
     // 2. 格式化新闻并构建提示
     const formattedNews = formatNewsArticles(newsArticles);
-    const prompt = fillPromptTemplate(newsTemplate, {
+    const prompt = parseAndRenderTemplate(newsTemplate, {
       news_articles: formattedNews,
     });
 

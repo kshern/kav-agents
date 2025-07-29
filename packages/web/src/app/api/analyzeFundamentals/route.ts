@@ -4,8 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { analyzeFundamentals } from "@core";
-import { FundamentalsAnalystProps } from "@core/types";
+import { analyzeFundamentals, FundamentalsAnalystProps } from "@core/server";
 
 /**
  * POST 处理函数 - 处理基本面分析请求

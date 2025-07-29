@@ -2,8 +2,8 @@
  * @file 市场分析师 Agent
  * @description 定义了用于分析公司市场信息的函数。
  */
-import { generateContent } from "../../utils/geminiUtils";
-import { fillPromptTemplate } from "../../utils";
+import { generateContent } from "../../../utils/geminiUtils";
+import { parseAndRenderTemplate } from "../../../utils";
 import template from "./market.md?raw";
 import { getStockData } from "../../../dataflows/alphaVantageUtils";
 import { Model } from "../../../types";
@@ -28,7 +28,7 @@ export async function analyzeMarket(props: {
     // 2. 构建提示
     // 注意：Alpha Vantage 的免费 API 不直接提供详细的 stockInfo 和 recommendations
     // 我们将使用可用的历史数据来生成报告。
-    const prompt = fillPromptTemplate(template, {
+    const prompt = parseAndRenderTemplate(template, {
       company_of_interest,
       trade_date,
       stockInfo: "N/A", // 标记为不可用

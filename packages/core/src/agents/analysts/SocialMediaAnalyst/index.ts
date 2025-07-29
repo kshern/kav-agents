@@ -4,9 +4,9 @@
  */
 
 // import { fetchTopFromCategory } from "../../../dataflows/redditUtils";
-import { fillPromptTemplate } from "../../utils";
+import { parseAndRenderTemplate } from "../../../utils";
 import socialTemplate from "./social.md?raw";
-import { generateContent } from "../../utils/geminiUtils";
+import { generateContent } from "../../../utils/geminiUtils";
 // 定义社交媒体帖子的结构
 export interface SocialMediaPost {
   title: string; // 标题
@@ -65,12 +65,12 @@ export async function analyzeSocialMedia(props: {
 
     // 2. 格式化帖子并构建提示
     const formattedPosts = formatRedditPosts(redditPosts);
-    const prompt = fillPromptTemplate(socialTemplate, {
+    const prompt = parseAndRenderTemplate(socialTemplate, {
       reddit_posts: formattedPosts,
     });
 
     const result = await generateContent({
-      modelName: "gemini-2.5-flash",
+      modelConfig: { model_name: "gemini-2.5-flash" },
       prompt,
     });
 

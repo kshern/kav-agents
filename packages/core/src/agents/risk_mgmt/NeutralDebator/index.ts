@@ -4,8 +4,8 @@
  */
 
 import { AgentState } from '../../../models/agentStates';
-import { fillPromptTemplate } from '../../utils';
-import { generateContent } from '../../utils/geminiUtils';
+import { fillPromptTemplate } from '../../../utils';
+import { generateContent } from '../../../utils/geminiUtils';
 import neutralTemplate from './neutral.md?raw';
 
 

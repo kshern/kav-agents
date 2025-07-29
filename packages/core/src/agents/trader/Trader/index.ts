@@ -4,9 +4,9 @@
  */
 
 import { AgentState } from "../../../models/agentStates";
-import { fillPromptTemplate } from "../../utils";
+import { parseAndRenderTemplate } from "../../../utils";
 import traderTemplate from "./trader.md?raw";
-import { generateContent } from "../../utils/geminiUtils";
+import { generateContent } from "../../../utils/geminiUtils";
 
 /**
  * 基于最终的投资计划和所有分析，生成一个明确的交易提案。
@@ -17,7 +17,7 @@ import { generateContent } from "../../utils/geminiUtils";
 export async function createTradePlan(
   state: AgentState
 ): Promise<{ trader_investment_plan: string }> {
-  const prompt = fillPromptTemplate(traderTemplate, {
+  const prompt = parseAndRenderTemplate(traderTemplate, {
     company_of_interest: state.company_of_interest,
     investment_plan: state.investment_plan,
     pastMemories: "", // 内存功能暂时禁用

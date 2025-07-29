@@ -16,6 +16,8 @@
     "react": "^19.1.0"
   },
   "devDependencies": {
+    "@types/mustache": "^4.2.6",
+    "@types/yaml": "^1.9.7",
     "@vitejs/plugin-react": "^4.5.2",
     "typescript": "~5.8.3",
     "vite": "^7.0.0"
@@ -26,7 +28,9 @@
     "axios": "^1.11.0",
     "cheerio": "^1.1.2",
     "exponential-backoff": "^3.1.2",
+    "gray-matter": "^4.0.3",
     "langchain": "^0.3.30",
+    "mustache": "^4.2.0",
     "yahoo-finance2": "^2.13.3"
   }
 }

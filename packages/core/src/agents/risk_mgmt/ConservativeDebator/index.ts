@@ -4,9 +4,9 @@
  */
 
 import { AgentState } from '../../../models/agentStates';
-import { fillPromptTemplate } from '../../utils';
+import { fillPromptTemplate } from '../../../utils';
 import conservativeTemplate from './conservative.md?raw';
-import { generateContent } from "../../utils/geminiUtils";
+import { generateContent } from "../../../utils/geminiUtils";
 
 /**
  * 基于初步投资计划和所有分析报告，从保守的角度生成风险评估论点。

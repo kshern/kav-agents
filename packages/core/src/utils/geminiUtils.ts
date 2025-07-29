@@ -4,7 +4,7 @@
  */
 
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
-import { Model } from "../../types";
+import { Model } from "../types";
 
 // 默认的 API 密钥，在没有提供时使用
 // 注意：在生产环境中应使用环境变量

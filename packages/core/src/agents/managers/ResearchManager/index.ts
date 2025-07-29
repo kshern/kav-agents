@@ -4,9 +4,9 @@
  */
 
 import { InvestDebateState, DebateMessage } from "../../../models/agentStates";
-import { fillPromptTemplate } from "../../utils";
+import { parseAndRenderTemplate } from "../../../utils";
 import researchTemplate from "./research.md?raw";
-import { generateContent } from "../../utils/geminiUtils";
+import { generateContent } from "../../../utils/geminiUtils";
 import { Model } from "../../../types";
 import {
   BufferMemory,
@@ -51,7 +51,7 @@ export async function manageResearch(props: {
   const memoryVariables = await memory.loadMemoryVariables({});
   const pastMemories = memoryVariables.past_memories;
 
-  const prompt = fillPromptTemplate(researchTemplate, {
+  const prompt = parseAndRenderTemplate(researchTemplate, {
     past_memories: pastMemories, // LangChain memory 的输出
     debate_history: pastMemories, // 同样使用 memory 的输出
   });
