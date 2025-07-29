@@ -6,7 +6,7 @@
 import { getNewsFromApi } from "../../../dataflows/newsApiUtils";
 import { parseAndRenderTemplate } from "../../../utils";
 import { Model, NewsArticle } from "../../../types";
-import newsTemplate from "./news.md?raw";
+import { loadTemplate } from "../../../utils/templateLoader"; // 动态加载模板，兼容Vite和Node环境
 import { generateContent } from "../../../utils/geminiUtils";
 
 /**
@@ -63,9 +63,14 @@ export async function analyzeNews(props: {
 
     // 2. 格式化新闻并构建提示
     const formattedNews = formatNewsArticles(newsArticles);
-    const prompt = parseAndRenderTemplate(newsTemplate, {
+        // 动态加载新闻分析模板
+    const template = await loadTemplate(
+      "news.md",
+      import.meta.url
+    );
+    const prompt = parseAndRenderTemplate(template, {
       news_articles: formattedNews,
-    });
+    }); // 用统一工具渲染模板
 
     // 3. 调用模型生成报告
     const result = await generateContent({

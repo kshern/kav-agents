@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { analyzeMarket } from "@core";
+import { analyzeMarket } from "@core/server";
 import { Model } from "@core/types";
 
 /**

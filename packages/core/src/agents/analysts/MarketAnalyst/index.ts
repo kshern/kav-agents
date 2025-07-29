@@ -4,7 +4,7 @@
  */
 import { generateContent } from "../../../utils/geminiUtils";
 import { parseAndRenderTemplate } from "../../../utils";
-import template from "./market.md?raw";
+import { loadTemplate } from "../../../utils/templateLoader"; // 动态加载模板，兼容Vite和Node环境
 import { getStockData } from "../../../dataflows/alphaVantageUtils";
 import { Model } from "../../../types";
 
@@ -28,13 +28,18 @@ export async function analyzeMarket(props: {
     // 2. 构建提示
     // 注意：Alpha Vantage 的免费 API 不直接提供详细的 stockInfo 和 recommendations
     // 我们将使用可用的历史数据来生成报告。
+        // 动态加载市场分析模板
+    const template = await loadTemplate(
+      "market.md",
+      import.meta.url
+    );
     const prompt = parseAndRenderTemplate(template, {
       company_of_interest,
       trade_date,
       stockInfo: "N/A", // 标记为不可用
       recommendations: "N/A", // 标记为不可用
       stockData: JSON.stringify(stockData, null, 2),
-    });
+    }); // 用统一工具渲染模板
 
     // 3. 调用模型生成报告
     const result = await generateContent({

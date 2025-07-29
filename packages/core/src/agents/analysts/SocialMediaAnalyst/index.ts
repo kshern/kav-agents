@@ -5,7 +5,7 @@
 
 // import { fetchTopFromCategory } from "../../../dataflows/redditUtils";
 import { parseAndRenderTemplate } from "../../../utils";
-import socialTemplate from "./social.md?raw";
+import { loadTemplate } from "../../../utils/templateLoader"; // 动态加载模板，兼容Vite和Node环境
 import { generateContent } from "../../../utils/geminiUtils";
 // 定义社交媒体帖子的结构
 export interface SocialMediaPost {
@@ -65,9 +65,14 @@ export async function analyzeSocialMedia(props: {
 
     // 2. 格式化帖子并构建提示
     const formattedPosts = formatRedditPosts(redditPosts);
-    const prompt = parseAndRenderTemplate(socialTemplate, {
+        // 动态加载社交媒体分析模板
+    const template = await loadTemplate(
+      "social.md",
+      import.meta.url
+    );
+    const prompt = parseAndRenderTemplate(template, {
       reddit_posts: formattedPosts,
-    });
+    }); // 用统一工具渲染模板
 
     const result = await generateContent({
       modelConfig: { model_name: "gemini-2.5-flash" },
