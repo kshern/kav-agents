@@ -28,14 +28,16 @@ const StockInputForm: React.FC<StockInputFormProps> = ({ onSubmit, isLoading }) 
                 disabled={isLoading}
                 className="text-lg py-6"
             />
-            <Button type="submit" disabled={isLoading || !stockCode.trim()} className="text-lg py-6">
-                {isLoading ? (
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                ) : (
-                    <Rocket className="mr-2 h-5 w-5" />
-                )}
-                开始分析
-            </Button>
+            <div className="flex justify-center">
+                <Button type="submit" disabled={isLoading || !stockCode.trim()} className="text-lg py-6 bg-primary">
+                    {isLoading ? (
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    ) : (
+                        <Rocket className="mr-2 h-5 w-5" />
+                    )}
+                    开始分析
+                </Button>
+            </div>
         </form>
     );
 };
