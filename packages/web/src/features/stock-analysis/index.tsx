@@ -29,8 +29,8 @@ const StockAnalysis: React.FC = () => {
         <div className="bg-gray-50 flex items-center justify-center min-h-screen p-4">
             <Card className="w-full max-w-2xl">
                 <CardHeader>
-                    <CardTitle className="text-center text-3xl font-bold">智能股票分析 Agent</CardTitle>
-                    <CardDescription className="text-center">输入股票代码，启动AI为您生成深度分析报告</CardDescription>
+                    <CardTitle className="text-center text-3xl font-bold">智能分析 Agent</CardTitle>
+                    <CardDescription className="text-center">输入代码，启动AI为您生成深度分析报告</CardDescription>
                 </CardHeader>
                 <CardContent>
                     {renderContent()}

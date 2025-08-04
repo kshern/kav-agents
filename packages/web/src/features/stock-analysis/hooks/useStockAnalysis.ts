@@ -3,14 +3,24 @@ import { Database, LineChart, Users, FilePen } from 'lucide-react';
 import { AnalysisStatus, AnalysisStep, StepStatus, StockAnalysisHook } from '../types';
 
 /**
+ * API 请求参数接口
+ */
+interface AnalysisApiRequest {
+    company_of_interest: string;
+    modelConfig: {
+        model_name: string;
+    };
+    trade_date: string;
+}
+
+/**
  * 初始分析步骤
  */
 const initialAnalysisSteps = [
-    { id: 'fetch_data', text: '获取公司基本数据', icon: Database },
-    { id: 'analyze_financials', text: '分析财务报表', icon: Database },
-    { id: 'analyze_technicals', text: '执行技术指标分析', icon: LineChart },
-    { id: 'analyze_sentiment', text: '评估市场情绪', icon: Users },
-    { id: 'generate_report', text: '生成最终报告', icon: FilePen },
+    { id: 'analyze_fundamentals', text: '分析公司基本面', icon: Database },
+    { id: 'analyze_market', text: '分析市场环境', icon: LineChart },
+    { id: 'analyze_news', text: '分析相关新闻', icon: Users },
+    { id: 'manage_research', text: '生成投资研究报告', icon: FilePen },
 ];
 
 /**
@@ -26,31 +36,55 @@ export function useStockAnalysis(): StockAnalysisHook {
     );
     const [progress, setProgress] = useState(0);
 
-    // 分析模拟效果
+    // 真实分析流程
     useEffect(() => {
         if (status !== 'processing') return;
 
         let isCancelled = false;
         
-        const runSimulation = async () => {
+        const runAnalysis = async () => {
             const totalSteps = initialAnalysisSteps.length;
+            
+            // 构建 API 请求参数
+            const apiRequest: AnalysisApiRequest = {
+                company_of_interest: stockCode,
+                modelConfig: {
+                    model_name: 'gemini-2.5-flash'
+                },
+                trade_date: new Date().toISOString().split('T')[0] // 当前日期
+            };
             
             for (let i = 0; i < totalSteps; i++) {
                 if (isCancelled) return;
 
+                const currentStep = initialAnalysisSteps[i];
+                
                 // 更新当前步骤为进行中
                 setSteps(prev => prev.map((s, idx) => 
                     idx === i ? { ...s, status: 'in-progress' as StepStatus } : s
                 ));
 
-                // 模拟异步工作
-                await new Promise(resolve => setTimeout(resolve, 1200));
-                if (isCancelled) return;
+                try {
+                    // 根据步骤 ID 调用对应的 API
+                    await callApiForStep(currentStep.id, apiRequest);
+                    
+                    if (isCancelled) return;
 
-                // 更新当前步骤为已完成
-                setSteps(prev => prev.map((s, idx) => 
-                    idx === i ? { ...s, status: 'completed' as StepStatus } : s
-                ));
+                    // 更新当前步骤为已完成
+                    setSteps(prev => prev.map((s, idx) => 
+                        idx === i ? { ...s, status: 'completed' as StepStatus } : s
+                    ));
+                } catch (error) {
+                    console.error(`步骤 ${currentStep.text} 执行失败:`, error);
+                    
+                    // 更新当前步骤为失败
+                    setSteps(prev => prev.map((s, idx) => 
+                        idx === i ? { ...s, status: 'error' as StepStatus } : s
+                    ));
+                    
+                    setStatus('error');
+                    return;
+                }
                 
                 // 更新总体进度
                 setProgress(((i + 1) / totalSteps) * 100);
@@ -60,12 +94,49 @@ export function useStockAnalysis(): StockAnalysisHook {
             setStatus('complete');
         };
 
-        runSimulation();
+        runAnalysis();
 
         return () => {
             isCancelled = true;
         };
-    }, [status]);
+    }, [status, stockCode]);
+
+    /**
+     * 根据步骤 ID 调用对应的 API
+     * @param stepId 步骤标识符
+     * @param request API 请求参数
+     */
+    const callApiForStep = async (stepId: string, request: AnalysisApiRequest): Promise<void> => {
+        const apiEndpoints: Record<string, string> = {
+            'analyze_fundamentals': '/api/analyzeFundamentals',
+            'analyze_market': '/api/analyzeMarket',
+            'analyze_news': '/api/analyzeNews',
+            'manage_research': '/api/manageResearch'
+        };
+
+        const endpoint = apiEndpoints[stepId];
+        if (!endpoint) {
+            throw new Error(`未知的分析步骤: ${stepId}`);
+        }
+
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(request),
+        });
+
+        if (!response.ok) {
+            throw new Error(`API 调用失败: ${response.status} ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        console.log(`${stepId} 分析结果:`, result);
+        
+        // 这里可以根据需要存储分析结果
+        // 例如：setAnalysisResults(prev => ({ ...prev, [stepId]: result }));
+    };
 
     /**
      * 开始分析
