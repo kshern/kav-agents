@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Loader2, Rocket } from 'lucide-react';
-import { StockInputFormProps } from '../types';
+import { StockInputFormProps } from '@/types';
 
 /**
  * 股票输入表单组件

@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Check, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { StepItemProps } from '../../types';
+import { StepItemProps } from '@/types';
 
 /**
  * 步骤项组件

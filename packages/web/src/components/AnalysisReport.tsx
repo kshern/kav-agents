@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
-import { AnalysisReportProps } from '../types';
+import { AnalysisReportProps } from '@/types';
 
 /**
  * 分析报告组件

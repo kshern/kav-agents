@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Progress } from '@/components/ui/progress';
-import { ProgressTrackerProps } from '../../types';
+import { ProgressTrackerProps } from '@/types';
 import StepItem from './StepItem';
 
 /**
