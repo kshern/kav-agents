@@ -6,7 +6,7 @@
 // import { fetchTopFromCategory } from "../../../dataflows/redditUtils";
 import { parseAndRenderTemplate } from "../../../utils";
 import { loadTemplate } from "../../../utils/templateLoader"; // 动态加载模板，兼容Vite和Node环境
-import { generateContent } from "../../../utils/geminiUtils";
+import { generateContent } from "../../../models/gateway";
 // 定义社交媒体帖子的结构
 export interface SocialMediaPost {
   title: string; // 标题

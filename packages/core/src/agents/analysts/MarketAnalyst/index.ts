@@ -2,7 +2,7 @@
  * @file 市场分析师 Agent
  * @description 定义了用于分析公司市场信息的函数。
  */
-import { generateContent } from "../../../utils/geminiUtils";
+import { generateContent } from "../../../models/gateway";
 import { parseAndRenderTemplate } from "../../../utils";
 import { loadTemplate } from "../../../utils/templateLoader"; // 动态加载模板，兼容Vite和Node环境
 import { getStockData } from "../../../dataflows/alphaVantageUtils";

@@ -7,9 +7,6 @@ import { AnalysisStatus, AnalysisStep, StepStatus, StockAnalysisHook } from '../
  */
 interface AnalysisApiRequest {
     company_of_interest: string;
-    modelConfig: {
-        model_name: string;
-    };
     trade_date: string;
 }
 
@@ -18,9 +15,9 @@ interface AnalysisApiRequest {
  */
 const initialAnalysisSteps = [
     { id: 'analyze_fundamentals', text: '分析公司基本面', icon: Database },
-    { id: 'analyze_market', text: '分析市场环境', icon: LineChart },
-    { id: 'analyze_news', text: '分析相关新闻', icon: Users },
-    { id: 'manage_research', text: '生成投资研究报告', icon: FilePen },
+    // { id: 'analyze_market', text: '分析市场环境', icon: LineChart },
+    // { id: 'analyze_news', text: '分析相关新闻', icon: Users },
+    // { id: 'manage_research', text: '生成投资研究报告', icon: FilePen },
 ];
 
 /**
@@ -48,9 +45,6 @@ export function useStockAnalysis(): StockAnalysisHook {
             // 构建 API 请求参数
             const apiRequest: AnalysisApiRequest = {
                 company_of_interest: stockCode,
-                modelConfig: {
-                    model_name: 'gemini-2.5-flash'
-                },
                 trade_date: new Date().toISOString().split('T')[0] // 当前日期
             };
             

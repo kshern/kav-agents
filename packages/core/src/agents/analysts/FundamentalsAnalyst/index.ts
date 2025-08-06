@@ -2,7 +2,7 @@
  * @file 基本面分析师 Agent
  * @description 定义了用于分析公司基本面信息的函数。
  */
-import { generateContent } from "../../../utils/geminiUtils";
+import { generateContent } from "../../../models/gateway";
 import { parseAndRenderTemplate } from "../../../utils";
 import { loadTemplate } from "../../../utils/templateLoader";
 import { FundamentalsAnalystProps } from "../../../types";
@@ -10,7 +10,11 @@ import { FundamentalsAnalystProps } from "../../../types";
 // 在 Vite 环境下，您需要手动添加以下导入语句：
 // import fundamentalsTemplate from './fundamentals.md?raw';
 // 然后在 analyzeFundamentals 函数中传入 fundamentalsTemplate 参数
-
+const modelConfig = {
+    provider: 'openrouter',
+    model_name: 'z-ai/glm-4.5-air:free',
+    api_key: process.env.OPENROUTER_API_KEY,
+};
 /**
  * 分析给定公司的基本面信息并生成报告。
  *
@@ -18,30 +22,27 @@ import { FundamentalsAnalystProps } from "../../../types";
  * @returns - 返回一个包含分析报告的对象。
  */
 export async function analyzeFundamentals(
-  props: FundamentalsAnalystProps,
-  // viteTemplate?: string // 在 Vite 环境下传入通过 import xxx?raw 导入的模板
+  props: FundamentalsAnalystProps
 ): Promise<{ fundamentals_report: string }> {
   // 使用公共工具加载模板
   const template = await loadTemplate(
     "fundamentals.md",
-    import.meta.url,
-    // viteTemplate
+    import.meta.url
   );
-  
-  const { company_of_interest, modelConfig, trade_date } = props;
+
+  const { company_of_interest, trade_date } = props;
   const renderedTemplate = parseAndRenderTemplate(template, {
     company_of_interest,
     trade_date,
   });
-  console.log("template", template);
-  
+
   try {
     // 使用工具函数解析模板并渲染最终的prompt
     const finalPrompt = parseAndRenderTemplate(
-      renderedTemplate, 
-      { 
-        trade_date, 
-        company_of_interest 
+      renderedTemplate,
+      {
+        trade_date,
+        company_of_interest,
       },
       true // 启用调试输出
     );

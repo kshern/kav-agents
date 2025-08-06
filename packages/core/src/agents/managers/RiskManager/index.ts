@@ -3,10 +3,10 @@
  * @description 定义了用于管理风险评估流程、主持辩论并制定最终交易决策的函数。
  */
 
-import { RiskDebateState } from "../../../models/agentStates";
+import { RiskDebateState } from "../../../types/agentStates";
 import { parseAndRenderTemplate } from "../../../utils";
 import riskTemplate from "./risk.md?raw";
-import { generateContent } from "../../../utils/geminiUtils";
+import { generateContent } from "../../../models/gateway";
 import { Model } from "../../../types";
 
 /**

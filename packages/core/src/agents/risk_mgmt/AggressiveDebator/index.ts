@@ -3,10 +3,10 @@
  * @description 定义了在风险管理辩论中持激进观点的函数。
  */
 
-import { AgentState } from '../../../models/agentStates';
+import { AgentState } from '../../../types/agentStates';
 import { fillPromptTemplate } from '../../../utils';
 import aggressiveTemplate from './aggressive.md?raw';
-import { generateContent } from "../../../utils/geminiUtils";
+import { generateContent } from "../../../models/gateway";
 
 /**
  * 基于初步投资计划和所有分析报告，从激进的角度生成风险评估论点。

@@ -3,8 +3,8 @@
  * @description 定义了在投资辩论中持看跌观点的函数。
  */
 
-import { generateContent } from "../../../utils/geminiUtils";
-import { InvestDebateState } from "../../../models/agentStates";
+import { generateContent } from "../../../models/gateway";
+import { InvestDebateState } from "../../../types/agentStates";
 import { Model } from "../../../types";
 import { Memory } from "../../../memory"; // 假设存在一个记忆模块
 

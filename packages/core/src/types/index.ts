@@ -3,7 +3,7 @@
  * @description 核心共享类型定义
  */
 
-import { InvestDebateState, RiskDebateState } from "../models/agentStates";
+import { InvestDebateState, RiskDebateState } from "./agentStates";
 
 /**
  * 定义了可以对游戏状态值执行的比较操作符。
@@ -142,6 +142,8 @@ export type Property =
  * @description 模型的属性
  */
 export interface Model {
+  /** 模型供应商，如 'openai' | 'google' */
+  provider: 'openai' | 'google' | 'openrouter' | 'anthropic' | string;
   /** 模型名称 */
   model_name: string;
   /** API 密钥 */
@@ -161,10 +163,6 @@ export interface FundamentalsAnalystProps {
    * @property {string} company_of_interest - 公司名称
    */
   company_of_interest: string;
-  /**
-   * @property {Model} modelConfig - 模型配置
-   */
-  modelConfig: Model;
 }
 
 /**

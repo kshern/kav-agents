@@ -3,10 +3,10 @@
  * @description 定义了用于管理研究流程、主持辩论并制定投资计划的函数。
  */
 
-import { InvestDebateState, DebateMessage } from "../../../models/agentStates";
+import { InvestDebateState, DebateMessage } from "../../../types/agentStates";
 import { parseAndRenderTemplate } from "../../../utils";
 import researchTemplate from "./research.md?raw";
-import { generateContent } from "../../../utils/geminiUtils";
+import { generateContent } from "../../../models/gateway";
 import { Model } from "../../../types";
 import {
   BufferMemory,

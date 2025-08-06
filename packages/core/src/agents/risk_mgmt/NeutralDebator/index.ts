@@ -3,9 +3,9 @@
  * @description 定义了在风险管理辩论中持中立观点的函数。
  */
 
-import { AgentState } from '../../../models/agentStates';
+import { AgentState } from '../../../types/agentStates';
 import { fillPromptTemplate } from '../../../utils';
-import { generateContent } from '../../../utils/geminiUtils';
+import { generateContent } from '../../../models/gateway';
 import neutralTemplate from './neutral.md?raw';
 
 

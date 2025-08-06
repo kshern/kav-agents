@@ -7,7 +7,7 @@ import { getNewsFromApi } from "../../../dataflows/newsApiUtils";
 import { parseAndRenderTemplate } from "../../../utils";
 import { Model, NewsArticle } from "../../../types";
 import { loadTemplate } from "../../../utils/templateLoader"; // 动态加载模板，兼容Vite和Node环境
-import { generateContent } from "../../../utils/geminiUtils";
+import { generateContent } from "../../../models/gateway";
 
 /**
  * 格式化新闻文章列表为字符串。

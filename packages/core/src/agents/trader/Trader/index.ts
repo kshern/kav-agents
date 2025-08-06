@@ -3,10 +3,10 @@
  * @description 定义了根据最终投资计划制定具体交易提案的函数。
  */
 
-import { AgentState } from "../../../models/agentStates";
+import { AgentState } from "../../../types/agentStates";
 import { parseAndRenderTemplate } from "../../../utils";
 import traderTemplate from "./trader.md?raw";
-import { generateContent } from "../../../utils/geminiUtils";
+import { generateContent } from "../../../models/gateway";
 
 /**
  * 基于最终的投资计划和所有分析，生成一个明确的交易提案。
