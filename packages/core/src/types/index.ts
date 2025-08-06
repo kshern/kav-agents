@@ -148,6 +148,8 @@ export interface Model {
   model_name: string;
   /** API 密钥 */
   api_key?: string;
+  /** API 密钥 */
+  base_url?: string;
 }
 
 /**

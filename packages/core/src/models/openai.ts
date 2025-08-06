@@ -21,7 +21,7 @@ export async function generateOpenaiContent({
   prompt: string;
 }): Promise<string> {
   const openai = new OpenAI({
-    baseURL: "https://models.github.ai/inference/chat/completions",
+    baseURL: modelConfig.base_url || "https://models.github.ai/inference/chat/completions",
     apiKey: modelConfig.api_key || process.env.GITHUB_TOKEN, // or any PAT with models:read
   });
 
