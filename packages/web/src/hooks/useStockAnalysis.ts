@@ -15,8 +15,8 @@ interface AnalysisApiRequest {
  */
 const initialAnalysisSteps = [
     { id: 'analyze_fundamentals', text: '分析公司基本面', icon: Database },
-    // { id: 'analyze_market', text: '分析市场环境', icon: LineChart },
-    // { id: 'analyze_news', text: '分析相关新闻', icon: Users },
+    { id: 'analyze_market', text: '分析市场环境', icon: LineChart },
+    { id: 'analyze_news', text: '分析相关新闻', icon: Users },
     // { id: 'manage_research', text: '生成投资研究报告', icon: FilePen },
 ];
 

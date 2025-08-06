@@ -5,9 +5,18 @@
 
 import { getNewsFromApi } from "../../../dataflows/newsApiUtils";
 import { parseAndRenderTemplate } from "../../../utils";
-import { Model, NewsArticle } from "../../../types";
+import { NewsAnalystProps, NewsArticle } from "../../../types";
 import { loadTemplate } from "../../../utils/templateLoader"; // 动态加载模板，兼容Vite和Node环境
 import { generateContent } from "../../../models/gateway";
+
+// 在 Vite 环境下，您需要手动添加以下导入语句：
+// import newsTemplate from './news.md?raw';
+// 然后在 analyzeNews 函数中传入 newsTemplate 参数
+const modelConfig = {
+    provider: 'openrouter',
+    model_name: 'z-ai/glm-4.5-air:free',
+    api_key: process.env.OPENROUTER_API_KEY,
+};
 
 /**
  * 格式化新闻文章列表为字符串。
@@ -34,12 +43,10 @@ function formatNewsArticles(articles: NewsArticle[]): string {
  * @param props - 当前的 Agent 需要的参数，包含公司代码和交易日期。
  * @returns - 返回一个包含新闻分析报告的对象。
  */
-export async function analyzeNews(props: {
-  company_of_interest: string;
-  modelConfig: Model;
-  trade_date: string;
-}): Promise<{ news_report: string }> {
-  const { company_of_interest, modelConfig, trade_date } = props;
+export async function analyzeNews(
+  props: NewsAnalystProps
+): Promise<{ news_report: string }> {
+  const { company_of_interest, trade_date } = props;
 
   try {
     // 1. 获取新闻数据

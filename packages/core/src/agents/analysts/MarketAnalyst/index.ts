@@ -6,7 +6,16 @@ import { generateContent } from "../../../models/gateway";
 import { parseAndRenderTemplate } from "../../../utils";
 import { loadTemplate } from "../../../utils/templateLoader"; // 动态加载模板，兼容Vite和Node环境
 import { getStockData } from "../../../dataflows/alphaVantageUtils";
-import { Model } from "../../../types";
+import { MarketAnalystProps } from "../../../types";
+
+// 在 Vite 环境下，您需要手动添加以下导入语句：
+// import marketTemplate from './market.md?raw';
+// 然后在 analyzeMarket 函数中传入 marketTemplate 参数
+const modelConfig = {
+    provider: 'openrouter',
+    model_name: 'z-ai/glm-4.5-air:free',
+    api_key: process.env.OPENROUTER_API_KEY,
+};
 
 /**
  * 分析给定公司的市场信息并生成报告。
@@ -14,12 +23,10 @@ import { Model } from "../../../types";
  * @param props - 当前的 Agent 需要的参数，包含公司代码和交易日期。
  * @returns - 返回一个包含分析报告的对象。
  */
-export async function analyzeMarket(props: {
-  company_of_interest: string;
-  modelConfig: Model;
-  trade_date: string;
-}): Promise<{ market_report: string }> {
-  const { company_of_interest, modelConfig, trade_date } = props;
+export async function analyzeMarket(
+  props: MarketAnalystProps
+): Promise<{ market_report: string }> {
+  const { company_of_interest, trade_date } = props;
 
   try {
     // 1. 获取原始数据

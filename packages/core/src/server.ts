@@ -6,6 +6,7 @@
 // 服务端分析函数导出
 export * from './agents/analysts/FundamentalsAnalyst';
 export * from './agents/analysts/MarketAnalyst';
+export * from './agents/analysts/NewsAnalyst';
 
 
 // 服务端类型导出

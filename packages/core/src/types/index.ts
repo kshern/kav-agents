@@ -170,11 +170,14 @@ export interface FundamentalsAnalystProps {
  * @description 市场分析师的属性
  */
 export interface MarketAnalystProps {
+  /**
+   * @property {string} trade_date - 交易日期
+   */
   trade_date: string;
+  /**
+   * @property {string} company_of_interest - 公司名称
+   */
   company_of_interest: string;
-  stockInfo: any;
-  recommendations: any;
-  stockData: any;
 }
 
 // 定义新闻文章的结构
@@ -191,7 +194,14 @@ export interface NewsArticle {
  * @description 新闻分析师的属性
  */
 export interface NewsAnalystProps {
-  newsArticles: NewsArticle[];
+  /**
+   * @property {string} trade_date - 交易日期
+   */
+  trade_date: string;
+  /**
+   * @property {string} company_of_interest - 公司名称
+   */
+  company_of_interest: string;
 }
 
 // 定义 ResearchManager Agent 的输入参数类型
