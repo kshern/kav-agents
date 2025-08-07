@@ -23,9 +23,9 @@ const modelConfig = {
  * @param props - 当前的 Agent 需要的参数，包含公司代码和交易日期。
  * @returns - 返回一个包含分析报告的对象。
  */
-export async function analyzeMarket(
+export const analyzeMarket = async (
   props: MarketAnalystProps
-): Promise<{ market_report: string }> {
+): Promise<{ market_report: string }> => {
   const { company_of_interest, trade_date } = props;
 
   try {
@@ -59,4 +59,4 @@ export async function analyzeMarket(
     console.error("Error generating market report:", error);
     return { market_report: "生成市场分析报告时出错。" };
   }
-}
+};

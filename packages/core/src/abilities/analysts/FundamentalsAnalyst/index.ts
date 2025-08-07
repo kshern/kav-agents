@@ -21,9 +21,9 @@ const modelConfig = {
  * @param props - 当前的 Agent 需要的参数，包含公司代码和交易日期。
  * @returns - 返回一个包含分析报告的对象。
  */
-export async function analyzeFundamentals(
+export const analyzeFundamentals = async (
   props: FundamentalsAnalystProps
-): Promise<{ fundamentals_report: string }> {
+): Promise<{ fundamentals_report: string }> => {
   // 使用公共工具加载模板
   const template = await loadTemplate(
     "fundamentals.md",
@@ -58,4 +58,4 @@ export async function analyzeFundamentals(
     console.error("Error generating fundamentals report:", error);
     return { fundamentals_report: "生成基本面分析报告时出错。" };
   }
-}
+};
