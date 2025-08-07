@@ -4,9 +4,9 @@
  */
 
 // 服务端分析函数导出
-export * from './agents/analysts/FundamentalsAnalyst';
-export * from './agents/analysts/MarketAnalyst';
-export * from './agents/analysts/NewsAnalyst';
+export * from './abilities/analysts/FundamentalsAnalyst';
+export * from './abilities/analysts/MarketAnalyst';
+export * from './abilities/analysts/NewsAnalyst';
 
 
 // 服务端类型导出
