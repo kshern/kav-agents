@@ -4,6 +4,7 @@
  */
 
 import { AgentState } from "../../../types/agentStates";
+import { Model } from "../../../types";
 import { parseAndRenderTemplate } from "../../../utils";
 import traderTemplate from "./trader.md?raw";
 import { generateContent } from "../../../models/gateway";
@@ -14,9 +15,24 @@ import { generateContent } from "../../../models/gateway";
  * @param state - 当前的 Agent 状态。
  * @returns - 返回一个包含最终交易计划的对象。
  */
+/**
+ * @interface TradePlan
+ * @description 定义了最终交易计划的结构。
+ */
+export interface TradePlan {
+  trader_investment_plan: string;
+}
+
+/**
+ * 基于最终的投资计划和所有分析，生成一个明确的交易提案。
+ *
+ * @param state - 当前的 Agent 状态。
+ * @returns - 返回一个包含最终交易计划的对象。
+ */
 export async function createTradePlan(
-  state: AgentState
-): Promise<{ trader_investment_plan: string }> {
+  state: AgentState,
+  modelConfig: Model
+): Promise<TradePlan> {
   const prompt = parseAndRenderTemplate(traderTemplate, {
     company_of_interest: state.company_of_interest,
     investment_plan: state.investment_plan,
@@ -25,12 +41,14 @@ export async function createTradePlan(
 
   try {
     const result = await generateContent({
-      modelName: "gemini-2.5-flash",
-      prompt
+      modelConfig,
+      prompt,
     });
-    return { trader_investment_plan: result };
+        return { trader_investment_plan: result };
+
   } catch (error) {
     console.error("Error generating trader plan:", error);
-    return { trader_investment_plan: "生成交易员计划时出错。" };
+        return { trader_investment_plan: "生成交易员计划时出错。" };
+
   }
 }

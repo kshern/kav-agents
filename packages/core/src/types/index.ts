@@ -3,7 +3,7 @@
  * @description 核心共享类型定义
  */
 
-import { InvestDebateState, RiskDebateState } from "./agentStates";
+export type { AgentState, InvestDebateState, RiskDebateState } from "./agentStates";
 
 /**
  * 定义了可以对游戏状态值执行的比较操作符。
@@ -226,3 +226,27 @@ export type TraderProps = {
   investment_plan: string;
   pastMemories: string;
 };
+
+/**
+ * @description 内存模块的临时定义
+ */
+export type Memory = Record<string, any>;
+
+/**
+ * @interface AgentInput
+ * @description Agent 的输入参数
+ */
+export interface AgentInput {
+  company_of_interest: string;
+  modelConfig?: Partial<Model>;
+}
+
+/**
+ * @interface AgentContext
+ * @description 定义了 Agent 在整个生命周期中用于存储和传递状态的上下文对象。
+ */
+export interface AgentContext {
+  state: AgentState;
+  modelConfig: Model;
+  memory: Memory; 
+}

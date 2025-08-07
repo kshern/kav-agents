@@ -1,162 +1,131 @@
-import { useState, useEffect } from 'react';
-import { Database, LineChart, Users, FilePen } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Database, LineChart, Users, FilePen, BotMessageSquare, BrainCircuit } from 'lucide-react';
 import { AnalysisStatus, AnalysisStep, StepStatus, StockAnalysisHook } from '../types';
 
 /**
- * API 请求参数接口
+ * @constant initialAnalysisSteps
+ * @description 定义了分析流程的初始步骤，用于在UI上展示。
  */
-interface AnalysisApiRequest {
-    company_of_interest: string;
-    trade_date: string;
-}
-
-/**
- * 初始分析步骤
- */
-const initialAnalysisSteps = [
-    { id: 'analyze_fundamentals', text: '分析公司基本面', icon: Database },
-    { id: 'analyze_market', text: '分析市场环境', icon: LineChart },
-    { id: 'analyze_news', text: '分析相关新闻', icon: Users },
-    // { id: 'manage_research', text: '生成投资研究报告', icon: FilePen },
+const initialAnalysisSteps: Omit<AnalysisStep, 'status'>[] = [
+  { id: 'research', text: '研究市场与竞品', icon: Database },
+  { id: 'analyze', text: '多维度综合分析', icon: LineChart },
+  { id: 'debate', text: '多视角风险辩论', icon: Users },
+  { id: 'plan', text: '生成交易计划', icon: FilePen },
+  { id: 'manage', text: '执行与风险管理', icon: BrainCircuit },
+  { id: 'report', text: '生成决策报告', icon: BotMessageSquare },
 ];
 
 /**
- * 股票分析Hook
- * 管理分析状态、进度和步骤
+ * @function useStockAnalysis
+ * @description 管理股票分析流程的状态、进度和步骤的 React Hook。
+ * @returns {StockAnalysisHook} 返回分析状态、股票代码、步骤、进度以及控制分析流程的函数。
  */
 export function useStockAnalysis(): StockAnalysisHook {
-    // 状态管理
-    const [status, setStatus] = useState<AnalysisStatus>('idle');
-    const [stockCode, setStockCode] = useState('');
-    const [steps, setSteps] = useState<AnalysisStep[]>(
-        initialAnalysisSteps.map(step => ({ ...step, status: 'pending' as StepStatus }))
-    );
-    const [progress, setProgress] = useState(0);
+  // 状态管理
+  const [status, setStatus] = useState<AnalysisStatus>('idle');
+  const [stockCode, setStockCode] = useState('');
+  const [steps, setSteps] = useState<AnalysisStep[]>(
+    initialAnalysisSteps.map(step => ({ ...step, status: 'pending' as StepStatus }))
+  );
+  const [progress, setProgress] = useState(0);
 
-    // 真实分析流程
-    useEffect(() => {
-        if (status !== 'processing') return;
+  /**
+   * @function callAgentApi
+   * @description 调用后端 Agent API 来执行完整的分析流程。
+   * @param {string} code - 股票代码。
+   * @returns {Promise<unknown>} 返回 API 的 JSON 响应。
+   */
+  const callAgentApi = async (code: string): Promise<unknown> => {
+    const response = await fetch('/api/agent/run', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ symbol: code }),
+    });
 
-        let isCancelled = false;
-        
-        const runAnalysis = async () => {
-            const totalSteps = initialAnalysisSteps.length;
-            
-            // 构建 API 请求参数
-            const apiRequest: AnalysisApiRequest = {
-                company_of_interest: stockCode,
-                trade_date: new Date().toISOString().split('T')[0] // 当前日期
-            };
-            
-            for (let i = 0; i < totalSteps; i++) {
-                if (isCancelled) return;
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || `API 调用失败: ${response.status}`);
+    }
 
-                const currentStep = initialAnalysisSteps[i];
-                
-                // 更新当前步骤为进行中
-                setSteps(prev => prev.map((s, idx) => 
-                    idx === i ? { ...s, status: 'in-progress' as StepStatus } : s
-                ));
+    return response.json();
+  };
 
-                try {
-                    // 根据步骤 ID 调用对应的 API
-                    await callApiForStep(currentStep.id, apiRequest);
-                    
-                    if (isCancelled) return;
+  // 使用 useCallback 优化事件处理器
+  const handleStartAnalysis = useCallback((code: string) => {
+    setStockCode(code);
+    setStatus('processing');
+    setProgress(0);
+    setSteps(initialAnalysisSteps.map(step => ({ ...step, status: 'pending' as StepStatus })));
+  }, []);
 
-                    // 更新当前步骤为已完成
-                    setSteps(prev => prev.map((s, idx) => 
-                        idx === i ? { ...s, status: 'completed' as StepStatus } : s
-                    ));
-                } catch (error) {
-                    console.error(`步骤 ${currentStep.text} 执行失败:`, error);
-                    
-                    // 更新当前步骤为失败
-                    setSteps(prev => prev.map((s, idx) => 
-                        idx === i ? { ...s, status: 'error' as StepStatus } : s
-                    ));
-                    
-                    setStatus('error');
-                    return;
-                }
-                
-                // 更新总体进度
-                setProgress(((i + 1) / totalSteps) * 100);
-            }
-            
-            // 完成分析
-            setStatus('complete');
-        };
+  const handleReset = useCallback(() => {
+    setStatus('idle');
+    setStockCode('');
+    setProgress(0);
+    setSteps(initialAnalysisSteps.map(step => ({ ...step, status: 'pending' as StepStatus })));
+  }, []);
 
-        runAnalysis();
+  // 主分析流程
+  useEffect(() => {
+    if (status !== 'processing' || !stockCode) return;
 
-        return () => {
-            isCancelled = true;
-        };
-    }, [status, stockCode]);
+    let isCancelled = false;
 
-    /**
-     * 根据步骤 ID 调用对应的 API
-     * @param stepId 步骤标识符
-     * @param request API 请求参数
-     */
-    const callApiForStep = async (stepId: string, request: AnalysisApiRequest): Promise<void> => {
-        const apiEndpoints: Record<string, string> = {
-            'analyze_fundamentals': '/api/analyzeFundamentals',
-            'analyze_market': '/api/analyzeMarket',
-            'analyze_news': '/api/analyzeNews',
-            'manage_research': '/api/manageResearch'
-        };
-
-        const endpoint = apiEndpoints[stepId];
-        if (!endpoint) {
-            throw new Error(`未知的分析步骤: ${stepId}`);
+    const runAnalysis = async () => {
+      try {
+        // 模拟前端进度条更新，给用户即时反馈
+        const totalSteps = steps.length;
+        for (let i = 0; i < totalSteps; i++) {
+          if (isCancelled) return;
+          // 更新当前步骤为进行中
+          setSteps(prev =>
+            prev.map((s, idx) => (idx === i ? { ...s, status: 'in-progress' as StepStatus } : s))
+          );
+          // 模拟耗时
+          await new Promise(resolve => setTimeout(resolve, 500));
+          if (isCancelled) return;
+          // 更新当前步骤为完成
+          setSteps(prev =>
+            prev.map((s, idx) => (idx === i ? { ...s, status: 'completed' as StepStatus } : s))
+          );
+          setProgress(((i + 1) / totalSteps) * 100);
         }
 
-        const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(request),
-        });
+        // 实际调用后端 Agent，这期间前端进度条已经走完
+        console.log(`[useStockAnalysis] 正在为 ${stockCode} 调用 Agent...`);
+        const result = await callAgentApi(stockCode);
+        console.log(`[useStockAnalysis] Agent 返回结果:`, result);
 
-        if (!response.ok) {
-            throw new Error(`API 调用失败: ${response.status} ${response.statusText}`);
+        if (!isCancelled) {
+          setStatus('complete');
         }
-
-        const result = await response.json();
-        console.log(`${stepId} 分析结果:`, result);
-        
-        // 这里可以根据需要存储分析结果
-        // 例如：setAnalysisResults(prev => ({ ...prev, [stepId]: result }));
+      } catch (error) {
+        console.error('[useStockAnalysis] 分析流程执行失败:', error);
+        if (!isCancelled) {
+          setStatus('error');
+          // 将所有未完成的步骤标记为错误
+          setSteps(prev =>
+            prev.map(s => (s.status !== 'completed' ? { ...s, status: 'error' as StepStatus } : s))
+          );
+        }
+      }
     };
 
-    /**
-     * 开始分析
-     * @param code 股票代码
-     */
-    const handleStartAnalysis = (code: string) => {
-        setStockCode(code);
-        setStatus('processing');
-    };
+    runAnalysis();
 
-    /**
-     * 重置分析
-     */
-    const handleReset = () => {
-        setStatus('idle');
-        setStockCode('');
-        setProgress(0);
-        setSteps(initialAnalysisSteps.map(step => ({ ...step, status: 'pending' as StepStatus })));
+    return () => {
+      isCancelled = true;
     };
+  }, [status, stockCode, steps.length]);
 
-    return {
-        status,
-        stockCode,
-        steps,
-        progress,
-        handleStartAnalysis,
-        handleReset
-    };
+  return {
+    status,
+    stockCode,
+    steps,
+    progress,
+    handleStartAnalysis,
+    handleReset,
+  };
 }

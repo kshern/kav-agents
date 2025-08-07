@@ -29,6 +29,7 @@ export async function getNewsFromApi(
   const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(
     query
   )}&from=${fromDate}&to=${toDate}&sortBy=publishedAt&apiKey=${NEWS_API_KEY}`;
+  console.log(url);
   try {
     const response = await fetch(url);
     if (!response.ok) {
