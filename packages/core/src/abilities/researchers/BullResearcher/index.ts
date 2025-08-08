@@ -4,6 +4,8 @@
  */
 
 import { generateContent } from "../../../models/gateway";
+import { parseAndRenderTemplate } from "../../../utils"; // 统一的模板渲染工具（支持 Mustache 风格占位符）
+import { loadTemplate } from "../../../utils/templateLoader"; // 动态加载模板，兼容 Vite/Node 环境
 import { InvestDebateState } from "../../../types/agentStates";
 import { Model } from "../../../types";
 import { buildPastMemories } from "../../../adapters/memory";
@@ -48,28 +50,20 @@ export async function researchBull(props: {
     .map((msg) => `${msg.role}: ${msg.content}`)
     .join("\n");
 
-  // 动态构建牛方提示
-  const prompt = `You are a Bull Analyst making the case for investing in the stock. Your goal is to present a well-reasoned argument emphasizing opportunities, strengths, and positive indicators. Leverage the provided research and data to highlight potential upsides and counter bearish arguments effectively.
-
-Key points to focus on:
-
-- Opportunities and Strengths: Highlight factors like market leadership, innovation, or strategic advantages that could drive the stock's performance.
-- Competitive Strengths: Emphasize advantages such as a strong market position, superior technology, or a loyal customer base.
-- Positive Indicators: Use evidence from financial data, market trends, or recent positive news to support your position.
-- Bear Counterpoints: Critically analyze the bear argument with specific data and sound reasoning, exposing weaknesses or overly pessimistic assumptions.
-- Engagement: Present your argument in a conversational style, directly engaging with the bear analyst's points and debating effectively rather than simply listing facts.
-
-Resources available:
-
-Market research report: ${market_report}
-Social media sentiment report: ${sentiment_report}
-Latest world affairs news: ${news_report}
-Company fundamentals report: ${fundamentals_report}
-Conversation history of the debate: ${history_str}
-Last bear argument: ${current_response}
-Reflections from similar situations and lessons learned: ${past_memory_str}
-Use this information to deliver a compelling bull argument, refute the bear's claims, and engage in a dynamic debate that demonstrates the potential and strengths of investing in the stock. You must also address reflections and learn from lessons and mistakes you made in the past.
-`;
+  // 动态加载并渲染模板（以 bull.md 为模板来源）
+  const template = await loadTemplate("bull.md", import.meta.url);
+  const prompt = parseAndRenderTemplate(template, {
+    // 研究报告
+    market_report,
+    sentiment_report,
+    news_report,
+    fundamentals_report,
+    // 辩论上下文
+    argument_history: history_str,
+    last_opponent_argument: current_response,
+    // 过去记忆（经验教训）
+    past_memories: past_memory_str,
+  });
 
   try {
     // 调用 LLM 生成论点
