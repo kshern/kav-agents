@@ -12,3 +12,5 @@ export * from './types';
 // Agent 相关导出
 export * from './agents/BaseAgent';
 export * from './agents/tradeAgent';
+// 通用步骤执行器（仅类型或服务端使用）
+export * from './pipeline/executor';

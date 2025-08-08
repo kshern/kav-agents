@@ -3,7 +3,9 @@
  * @description 核心共享类型定义
  */
 
+import type { AgentState, InvestDebateState, RiskDebateState } from "./agentStates";
 export type { AgentState, InvestDebateState, RiskDebateState } from "./agentStates";
+export * from "./analysis";
 
 /**
  * 定义了可以对游戏状态值执行的比较操作符。

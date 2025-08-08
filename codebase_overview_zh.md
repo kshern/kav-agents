@@ -20,7 +20,7 @@
 - 包管理：pnpm monorepo
 - 语言与框架：TypeScript、React 19、Next.js 15、Vite 7
 - UI：Tailwind CSS、Radix UI、Lucide 图标
-- AI/数据：LangChain、@langchain/google-genai、yahoo-finance2、axios、cheerio、mustache、gray-matter、exponential-backoff
+- AI/数据：ai、@ai-sdk/google、@ai-sdk/openai、yahoo-finance2、axios、cheerio、mustache、gray-matter、exponential-backoff
 
 ## 三、各包详解
 
@@ -29,7 +29,7 @@
 - 构建：`vite build && tsc`，产物至 `dist/`，同时生成类型定义。
 - 模块类型：ESM（`"type": "module"`）。
 - 依赖亮点：
-  - `langchain` 与 `@langchain/google-genai`：驱动 LLM 分析（需要服务端环境配置 API Key）。
+  - `ai` 与 `@ai-sdk/google`/`@ai-sdk/openai`：驱动 LLM 分析（需要服务端环境配置 API Key）。
   - `yahoo-finance2`：行情与基本面数据。
   - `axios` + `cheerio`：网络请求与爬取。
   - `mustache`、`gray-matter`：模板与内容元数据处理。
@@ -68,7 +68,7 @@
 ## 四、典型数据流
 1. UI（`web` 或 `trade`/`chzj`）触发分析请求。
 2. 服务端（Next.js Route Handler/Server Actions 或 Node）调用 `core` 的服务端分析函数：
-   - 调用 LLM（LangChain + Google GenAI）。
+   - 调用 LLM（AI SDK：`ai` + `@ai-sdk/google`/`@ai-sdk/openai`）。
    - 获取市场/基本面数据（`yahoo-finance2`）。
    - 必要时进行网页抓取（`axios` + `cheerio`）。
 3. 将分析结果返回给前端进行展示。客户端严格避免引入服务端专用模块。
@@ -97,7 +97,7 @@
 - 注意：根 `package.json` 的 `build` 目前仅构建 `packages/chzj`。
 
 ## 六、环境与密钥
-- `@langchain/google-genai` 需要在服务端环境配置 Google GenAI 的 API Key（例如通过 Next.js 环境变量）。
+- 使用 AI SDK 时需要在服务端环境配置相应提供商的 API Key（如 Google 或 OpenAI），通过环境变量注入。
 - 确保密钥不会被打入客户端 Bundle：把所有调用 LLM 的逻辑放到服务端（`core/src/server.ts` 或 Next.js Server 端）。
 
 ## 七、后续建议

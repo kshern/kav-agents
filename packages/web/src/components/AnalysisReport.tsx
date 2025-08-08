@@ -25,7 +25,7 @@ const AnalysisReport: React.FC<AnalysisReportProps> = ({ stockCode, onReset }) =
                 <ul>
                     <li><strong>市盈率 (P/E):</strong> 25.4x (行业平均: 22.1x)</li>
                     <li><strong>股息率:</strong> 1.8%</li>
-                    <li><strong>技术趋势:</strong> 50日均线向上穿越200日均线，形成"黄金交叉"。</li>
+                    <li><strong>技术趋势:</strong> 50日均线向上穿越200日均线，形成&quot;黄金交叉&quot;。</li>
                 </ul>
             </div>
             

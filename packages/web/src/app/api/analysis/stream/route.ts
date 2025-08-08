@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     'Cache-Control': 'no-cache, no-transform',
     'Connection': 'keep-alive',
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST',
+    'Access-Control-Allow-Methods': 'GET',
     'Access-Control-Allow-Headers': 'Content-Type',
   });
 

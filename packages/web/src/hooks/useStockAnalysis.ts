@@ -1,28 +1,37 @@
 import { useState, useRef, useEffect } from 'react';
-import { Database, LineChart } from 'lucide-react';
+import { Database, LineChart, Newspaper, ClipboardList, Users, BarChart3, Brain, Shield, Megaphone } from 'lucide-react';
 import { AnalysisStatus, AnalysisStep, StepStatus, StockAnalysisHook } from '../types';
-
-// 定义进度事件类型（与后端保持一致）
-interface ProgressEvent {
-  stepId: string;
-  stepText: string;
-  status: 'started' | 'completed' | 'error';
-  progress: number;
-  result?: unknown;
-  error?: string;
-}
-
-// 定义后端步骤配置类型
-interface AnalysisStepConfig {
-  id: string;
-  text: string;
-  analyst: string;
-}
+import type { ProgressEvent, AnalysisStepConfig } from '@core';
 
 // 步骤图标映射
 const STEP_ICONS: Record<string, React.ComponentType> = {
+  // 基础
   'analyze_fundamentals': Database,
+  'analyzeFundamentals': Database,
   'analyze_market': LineChart,
+  'analyzeMarket': LineChart,
+
+  // 扩展步骤（兜底到默认图标，保证向后兼容）
+  'analyze_news': Newspaper,
+  'analyzeNews': Newspaper,
+  'manage_research': ClipboardList,
+  'manageResearch': ClipboardList,
+  'analyze_social_media': Megaphone,
+  'analyzeSocialMedia': Megaphone,
+  'manage_risk': Shield,
+  'manageRisk': Shield,
+  'research_bull': Brain,
+  'researchBull': Brain,
+  'research_bear': Brain,
+  'researchBear': Brain,
+  'debate_aggressive': Users,
+  'debateAggressive': Users,
+  'debate_conservative': Users,
+  'debateConservative': Users,
+  'debate_neutral': Users,
+  'debateNeutral': Users,
+  'create_trade_plan': BarChart3,
+  'createTradePlan': BarChart3,
 };
 
 /**
@@ -77,6 +86,16 @@ export function useStockAnalysis(): StockAnalysisHook {
     // 组件初始化时加载步骤配置
     useEffect(() => {
         loadAnalysisSteps();
+    }, []);
+
+    // 组件卸载时清理 EventSource 连接，防止内存/连接泄漏
+    useEffect(() => {
+        return () => {
+            if (eventSourceRef.current) {
+                eventSourceRef.current.close();
+                eventSourceRef.current = null;
+            }
+        };
     }, []);
 
     /**

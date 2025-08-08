@@ -11,7 +11,7 @@
 - **UI 库**: Tailwind CSS, Radix UI
 - **核心逻辑**: TypeScript, Node.js
 - **AI 与数据处理**:
-  - `langchain` & `@langchain/google-genai`: 用于构建和驱动 AI 代理。
+  - `ai`、`@ai-sdk/google`、`@ai-sdk/openai`: 用于构建和驱动 AI 分析（AI SDK 方案，已替代早期的 LangChain 方案）。
   - `yahoo-finance2`: 用于获取股票市场数据。
   - `axios` & `cheerio`: 用于网络请求和数据抓取。
 
@@ -24,7 +24,7 @@
 这是项目的核心引擎，包含了所有与 AI 分析和数据处理相关的逻辑。它被其他前端包作为依赖项使用。
 
 - **主要功能**: 提供 `analyzeFundamentals`（基本面分析）、`analyzeMarket`（市场分析）、`analyzeNews`（新闻分析）等核心服务。
-- **关键技术**: 利用 LangChain 与 Google Gemini 模型进行 AI 分析，并通过 `yahoo-finance2` 获取实时金融数据。
+- **关键技术**: 利用 AI SDK（`ai`、`@ai-sdk/google`、`@ai-sdk/openai`）进行 AI 分析，并通过 `yahoo-finance2` 获取实时金融数据。
 
 ### `packages/web`
 

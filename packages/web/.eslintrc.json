@@ -1,0 +1,22 @@
+{
+  "extends": ["next/core-web-vitals"],
+  "overrides": [
+    {
+      "files": ["src/**/*.{ts,tsx}"],
+      "excludedFiles": ["src/app/api/**/*.ts", "src/app/api/**/*.tsx"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@core/server",
+                "message": "Do not import @core/server in client code. Use it only in Next.js route handlers or server-only modules."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
