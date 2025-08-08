@@ -10,6 +10,9 @@ interface MemoryRecord {
   timestamp: Date;
 }
 
+// 引入适配层以复用统一的记忆构建逻辑（收口到 adapters/memory）
+import { buildPastMemories } from "../adapters/memory";
+
 /**
  * Memory 类负责管理和检索智能体的长期记忆。
  */
@@ -42,6 +45,21 @@ export class Memory {
         recommendation: `这是第 ${i + 1} 条来自过去相似情况的模拟经验教训。`,
       })),
     );
+  }
+
+  /**
+   * @description 基于辩论的聊天历史构造统一的“过去记忆”字符串。
+   *              内部委托给适配层 `buildPastMemories`，业务不直接依赖第三方。
+   * @param history 辩论历史，需包含角色与文本。
+   * @param memoryKey 业务侧定义的内存键（需与模板占位符一致）。
+   * @returns 用于模板渲染的过去记忆字符串。
+   */
+  public async get_past_memories_from_history(
+    history: { role: "human" | "ai"; content: string }[],
+    memoryKey: string,
+  ): Promise<string> {
+    // 直接委托给适配层，传入 history 由适配层完成映射
+    return buildPastMemories(history || [], memoryKey);
   }
 
   /**

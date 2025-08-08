@@ -6,7 +6,7 @@
 import { generateContent } from "../../../models/gateway";
 import { InvestDebateState } from "../../../types/agentStates";
 import { Model } from "../../../types";
-import { Memory } from "../../../memory"; // 引入记忆模块
+import { buildPastMemories } from "../../../adapters/memory";
 
 /**
  * @description 牛方研究员 Agent，负责提出看涨论点并更新辩论状态。
@@ -23,7 +23,6 @@ export async function researchBull(props: {
     investment_debate_state: InvestDebateState;
   };
   modelConfig: Model;
-  memory: Memory; // 引入记忆模块
 }): Promise<{ investment_debate_state: InvestDebateState }> {
   const {
     state: {
@@ -34,20 +33,15 @@ export async function researchBull(props: {
       investment_debate_state,
     },
     modelConfig,
-    memory,
   } = props;
 
   const history = investment_debate_state.history || [];
   const current_response = investment_debate_state.current_response || "";
 
-  // 组合报告以用于检索相似记忆
-  const curr_situation = `${market_report}\n\n${sentiment_report}\n\n${news_report}\n\n${fundamentals_report}`;
-  const past_memories = await memory.get_memories(curr_situation, 2);
-
-  // 格式化过去的记忆
-  const past_memory_str = past_memories
-    .map((rec: { recommendation: string }) => rec.recommendation)
-    .join("\n\n");
+  // 业务侧定义 memoryKey，需与模板占位符一致
+  const memoryKey = "bull_past_memories";
+  // 基于辩论历史构造过去记忆字符串（直接通过适配层）
+  const past_memory_str = await buildPastMemories(history || [], memoryKey);
 
   // 将历史记录格式化为字符串
   const history_str = history

@@ -9,7 +9,6 @@ import researchTemplate from "./research.md?raw";
 import { generateContent } from "../../../models/gateway";
 import { Model } from "../../../types";
 import { buildPastMemories } from "../../../adapters/memory";
-import type { ChatMessageInput } from "../../../adapters/memory";
 
 /**
  * 整合所有分析报告，评估投资辩论，并生成最终的投资计划。
@@ -29,13 +28,10 @@ export async function manageResearch(props: {
   const memoryKey = "past_memories";
 
   // 使用适配层将 history 构造成过去记忆字符串，业务不直接依赖 langchain
-  const messages: ChatMessageInput[] = (
-    investment_debate_state.history || []
-  ).map((message: DebateMessage) => ({
-    role: message.role === "human" ? "human" : "ai",
-    content: message.content,
-  }));
-  const pastMemories = await buildPastMemories(messages, memoryKey);
+  const pastMemories = await buildPastMemories(
+    investment_debate_state.history || [],
+    memoryKey,
+  );
 
   const prompt = parseAndRenderTemplate(researchTemplate, {
     past_memories: pastMemories, // LangChain memory 的输出
