@@ -6,7 +6,6 @@ import { analyzeNews } from "../abilities";
 import type {
   AnalystAbility,
   AnalystCommonProps,
-  DebateResearcherAbility,
 } from "../types";
 import { runStepsStateful, StatefulStep } from "../pipeline/executor";
 import type {
@@ -18,6 +17,7 @@ import { researchBull } from "../abilities/researchers/BullResearcher";
 import { researchBear } from "../abilities/researchers/BearResearcher";
 // import { manageResearch } from "../abilities/managers/ResearchManager";
 import type { AgentState, Model } from "../types";
+import { FileLogger } from "../utils/logger";
 
 /**
  * 定义 TradeAgent 的输入类型
@@ -33,6 +33,8 @@ export interface TradeAgentInput {
 export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
   protected readonly name = "TradeAgent";
   private eventEmitter = new EventEmitter();
+  // 文件日志，记录每一步输入输出，便于离线分析
+  private logger = new FileLogger("logs/trade-agent.log");
 
   // 定义分析步骤（静态配置，作为唯一数据源）
   public static readonly ANALYSIS_STEPS: AnalysisStepConfig[] = [
@@ -167,41 +169,76 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
           .slice()
           .sort((a, b) => (a.debate_order ?? 0) - (b.debate_order ?? 0));
 
+  
         for (let i = 1; i <= debateRounds; i++) {
           for (const m of groupMembers) {
             steps.push({
               id: `${m.id}_r${i}`,
               text: `${m.text}（第${i}轮）`,
               run: async (state) => {
-                const ability = this.getAbility<DebateResearcherAbility>(
-                  m.analyst
-                );
-                if (!ability) throw new Error(`能力 '${m.analyst}' 未注册.`);
+                // 通用：按配置 inputs 动态装配 props.state，避免任何字段硬编码
+                const inputKeys = m.inputs ?? [];
+                const dynamicState: Record<string, unknown> = {};
+                for (const key of inputKeys) {
+                  const val = (state as unknown as Record<string, unknown>)[key];
+                  if (val !== undefined && val !== null) {
+                    dynamicState[key] = val;
+                  } else {
+                    // 默认值策略（通用）：
+                    // - *_state 推断为对象，默认 {}
+                    // - 其它按字符串处理，默认 ""
+                    dynamicState[key] = key.endsWith("_state") ? {} : "";
+                  }
+                }
+                // 文件日志：记录辩论步骤输入
+                await this.logger.info("TradeAgent", "辩论步骤输入", {
+                  stepId: `${m.id}_r${i}`,
+                  text: `${m.text}（第${i}轮）`,
+                  analyst: m.analyst,
+                  inputs: inputKeys,
+                  state: dynamicState,
+                  model: { provider: modelConfig.provider, model_name: modelConfig.model_name },
+                });
 
-                const {
-                  investment_debate_state,
-                  market_report,
-                  sentiment_report,
-                  news_report,
-                  fundamentals_report,
-                } = state;
+                // 为了完全解耦，这里不对能力参数做字段假设，通过宽泛签名进行调用
+                const abilityUnknown = this.getAbility(m.analyst) as unknown;
+                if (typeof abilityUnknown !== "function") {
+                  throw new Error(`能力 '${m.analyst}' 未注册.`);
+                }
+                type GenericDebateAbility = (props: {
+                  state: Record<string, unknown>;
+                  modelConfig: Model;
+                }) => Promise<unknown>;
+                const ability = abilityUnknown as GenericDebateAbility;
 
-                const { investment_debate_state: updated } = await ability({
-                  state: {
-                    market_report: market_report || "",
-                    sentiment_report: sentiment_report || "",
-                    news_report: news_report || "",
-                    fundamentals_report: fundamentals_report || "",
-                    investment_debate_state: investment_debate_state || {
-                      history: [],
-                      count: 0,
-                    },
-                  },
+                const rawResult = await ability({
+                  state: dynamicState,
                   modelConfig,
                 });
-                return {
-                  investment_debate_state: updated,
-                } as Partial<AgentState>;
+                // 文件日志：记录辩论步骤原始输出
+                await this.logger.info("TradeAgent", "辩论步骤原始输出", {
+                  stepId: `${m.id}_r${i}`,
+                  analyst: m.analyst,
+                  rawResult,
+                });
+
+                // 按配置 outputs 动态抽取返回，避免硬编码输出键
+                const outputKeys = m.outputs ?? [];
+                const partial = outputKeys.reduce<Record<string, unknown>>(
+                  (acc, key) => {
+                    const v = (rawResult as Record<string, unknown>)[key];
+                    acc[key] = v !== undefined ? v : (state as unknown as Record<string, unknown>)[key];
+                    return acc;
+                  },
+                  {},
+                );
+                // 文件日志：记录辩论步骤提取输出
+                await this.logger.info("TradeAgent", "辩论步骤提取输出", {
+                  stepId: `${m.id}_r${i}`,
+                  outputs: outputKeys,
+                  partial,
+                });
+                return partial as Partial<AgentState>;
               },
             });
           }
@@ -222,7 +259,21 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
             company_of_interest: state.company_of_interest,
             trade_date: state.trade_date,
           };
+          // 文件日志：记录普通步骤输入
+          await this.logger.info("TradeAgent", "普通步骤输入", {
+            stepId: cfg.id,
+            text: cfg.text,
+            analyst: cfg.analyst,
+            inputs: ["company_of_interest", "trade_date"],
+            state: payload,
+          });
           const res = await analyst(payload);
+          // 文件日志：记录普通步骤输出
+          await this.logger.info("TradeAgent", "普通步骤输出", {
+            stepId: cfg.id,
+            analyst: cfg.analyst,
+            rawResult: res,
+          });
           return res as Partial<AgentState>;
         },
       });
