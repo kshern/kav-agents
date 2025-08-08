@@ -4,10 +4,23 @@
  */
 
 import { NewsArticle } from "../types";
+import { ensureProxyInitialized } from "../utils/httpProxy";
 
 // 在此处填入您从 NewsAPI.org 获取的免费 API 密钥
 // 获取地址: https://newsapi.org/register
 const NEWS_API_KEY = process.env.NEWS_API_KEY;
+
+// 根据配置初始化一次全局代理（若未配置则不做任何事）
+ensureProxyInitialized();
+
+// NewsAPI 单条文章的最小必要结构定义
+interface NewsApiArticle {
+  url: string;
+  title: string;
+  description?: string;
+  publishedAt: string;
+  source: { name: string };
+}
 
 /**
  * 从 NewsAPI.org 获取新闻文章。
@@ -20,14 +33,16 @@ const NEWS_API_KEY = process.env.NEWS_API_KEY;
 export async function getNewsFromApi(
   query: string,
   fromDate: string,
-  toDate: string,
+  toDate: string
 ): Promise<NewsArticle[]> {
-  //   if (NEWS_API_KEY === 'YOUR_API_KEY_HERE') {
-  //     throw new Error('请在 newsApiUtils.ts 文件中配置 NewsAPI.org 的 API 密钥。');
-  //   }
+  if (!NEWS_API_KEY) {
+    throw new Error(
+      "请在 newsApiUtils.ts 文件中配置 NewsAPI.org 的 API 密钥。"
+    );
+  }
 
   const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(
-    query,
+    query
   )}&from=${fromDate}&to=${toDate}&sortBy=publishedAt&apiKey=${NEWS_API_KEY}`;
   console.log(url);
   try {
@@ -44,7 +59,7 @@ export async function getNewsFromApi(
     }
 
     // 将 NewsAPI.org 的文章格式转换为我们内部的 NewsArticle 格式
-    return data.articles.map((article: any) => ({
+    return data.articles.map((article: NewsApiArticle) => ({
       link: article.url,
       title: article.title,
       snippet: article.description || "",

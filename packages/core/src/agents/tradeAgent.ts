@@ -2,13 +2,14 @@ import { EventEmitter } from "events";
 import { analyzeFundamentals } from "../abilities/analysts/FundamentalsAnalyst";
 import { analyzeMarket } from "../abilities/analysts/MarketAnalyst";
 import { BaseAgent } from "./BaseAgent";
-import { FundamentalsAnalystProps, MarketAnalystProps } from "../types";
+import type { AnalystAbility } from "../types";
 import { runSteps, Step } from "../pipeline/executor";
 import type {
   TradeAgentOutput,
   AnalysisStepConfig,
   ProgressEvent,
 } from "../types";
+import { analyzeNews } from "../abilities";
 
 /**
  * 定义 TradeAgent 的输入类型
@@ -26,12 +27,14 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
 
   // 定义分析步骤（静态配置，作为唯一数据源）
   public static readonly ANALYSIS_STEPS: AnalysisStepConfig[] = [
-    {
-      id: "analyze_fundamentals",
-      text: "分析公司基本面",
-      analyst: "fundamentalsAnalyst",
-    },
-    { id: "analyze_market", text: "分析市场环境", analyst: "marketAnalyst" },
+    // {
+    //   id: "analyze_fundamentals",
+    //   text: "分析公司基本面",
+    //   analyst: "fundamentalsAnalyst",
+    // },
+    // { id: "analyze_market", text: "分析市场环境", analyst: "marketAnalyst" },
+    { id: "analyze_news", text: "分析新闻", analyst: "newsAnalyst" },
+    
   ];
 
   // 实例使用静态配置
@@ -52,6 +55,7 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
     super();
     this.registerAbility("fundamentalsAnalyst", analyzeFundamentals);
     this.registerAbility("marketAnalyst", analyzeMarket);
+    this.registerAbility("newsAnalyst", analyzeNews);
   }
 
   /**
@@ -94,14 +98,7 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
         run: async (inpt: TradeAgentInput) => {
           this.log(`执行步骤: ${cfg.text}`);
 
-          const analyst = this.getAbility<
-            | ((
-                props: FundamentalsAnalystProps,
-              ) => Promise<{ fundamentals_report: string }>)
-            | ((
-                props: MarketAnalystProps,
-              ) => Promise<{ market_report: string }>)
-          >(cfg.analyst);
+          const analyst = this.getAbility<AnalystAbility>(cfg.analyst);
 
           if (!analyst) {
             throw new Error(`能力 '${cfg.analyst}' 未注册.`);

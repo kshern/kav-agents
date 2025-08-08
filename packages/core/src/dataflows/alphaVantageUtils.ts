@@ -3,10 +3,13 @@
  * @description 提供了用于从 Alpha Vantage API 获取金融数据的函数。
  */
 
+import { ensureProxyInitialized } from "../utils/httpProxy"; // 引入全局代理初始化
+
 // 在此处填入您从 Alpha Vantage 获取的免费 API 密钥
 // 获取地址: https://www.alphavantage.co/support/#api-key
-const ALPHA_VANTAGE_API_KEY = "PKKHAH8M6NXQ1BYQ";
-
+const ALPHA_VANTAGE_API_KEY = process.env.ALPHA_VANTAGE_API_KEY;
+// 根据配置初始化一次全局代理（若未配置则不做任何事）
+ensureProxyInitialized();
 /**
  * 获取公司的每日时间序列股票数据。
  * @param symbol - 公司股票代码 (例如：'IBM')。
@@ -14,9 +17,11 @@ const ALPHA_VANTAGE_API_KEY = "PKKHAH8M6NXQ1BYQ";
  */
 export async function getStockData(symbol: string): Promise<any> {
   //   // 检查是否已配置 API 密钥
-  //   if (ALPHA_VANTAGE_API_KEY === "YOUR_API_KEY_HERE") {
-  //     throw new Error("请在 alphaVantageUtils.ts 文件中配置 Alpha Vantage API 密钥。");
-  //   }
+  if (!ALPHA_VANTAGE_API_KEY) {
+    throw new Error(
+      "请在 alphaVantageUtils.ts 文件中配置 Alpha Vantage API 密钥。"
+    );
+  }
 
   const url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&apikey=${ALPHA_VANTAGE_API_KEY}`;
 

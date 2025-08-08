@@ -9,8 +9,5 @@ export { default as Button } from "./components/Button";
 // 客户端安全的类型导出
 export * from "./types";
 
-// Agent 相关导出
-export * from "./agents/BaseAgent";
-export * from "./agents/tradeAgent";
-// 通用步骤执行器（仅类型或服务端使用）
-export * from "./pipeline/executor";
+// 注意：以下导出仅供客户端安全使用。包含 Node 内置依赖的服务端能力请从 "@core/server" 导入。
+// 如果确需在客户端使用，请确保不引入服务端模块（如 events/fs/path 等）。

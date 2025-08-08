@@ -6,12 +6,24 @@ export default defineConfig({
   plugins: [react()],
   build: {
     lib: {
-      entry: resolve(__dirname, "src/index.ts"),
-      name: "Core",
-      fileName: (format) => `core.${format}.js`,
+      // Build both client-safe and server entry points
+      entry: {
+        index: resolve(__dirname, "src/index.ts"),
+        server: resolve(__dirname, "src/server.ts"),
+      },
+      formats: ["es"],
+      fileName: (format, entryName) => `${entryName}.js`,
     },
     rollupOptions: {
-      external: ["react", "react-dom"],
+      // Keep react and Node built-ins external
+      external: [
+        "react",
+        "react-dom",
+        "events",
+        "fs",
+        "path",
+        "url",
+      ],
       output: {
         globals: {
           react: "React",
