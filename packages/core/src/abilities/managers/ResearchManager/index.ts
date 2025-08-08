@@ -8,8 +8,8 @@ import { parseAndRenderTemplate } from "../../../utils";
 import researchTemplate from "./research.md?raw";
 import { generateContent } from "../../../models/gateway";
 import { Model } from "../../../types";
-import { BufferMemory, ChatMessageHistory } from "langchain/memory";
-import { HumanMessage, AIMessage } from "@langchain/core/messages";
+import { buildPastMemories } from "../../../adapters/memory";
+import type { ChatMessageInput } from "../../../adapters/memory";
 
 /**
  * 整合所有分析报告，评估投资辩论，并生成最终的投资计划。
@@ -25,28 +25,17 @@ export async function manageResearch(props: {
   investment_plan: string;
 }> {
   const { investment_debate_state, modelConfig } = props;
+  // 业务侧定义 memoryKey，需与模板占位符保持一致
+  const memoryKey = "past_memories";
 
-  // 从 investment_debate_state.history 构建 ChatMessageHistory
-  const history = new ChatMessageHistory(
-    (investment_debate_state.history || []).map((message: DebateMessage) => {
-      if (message.role === "human") {
-        return new HumanMessage(message.content);
-      } else {
-        return new AIMessage(message.content);
-      }
-    }),
-  );
-
-  // 创建 BufferMemory 实例
-  const memory = new BufferMemory({
-    chatHistory: history,
-    memoryKey: "past_memories", // 确保这个 key 和 prompt 模板中的占位符一致
-    returnMessages: false, // 设置为 false, `loadMemoryVariables` 会返回字符串
-  });
-
-  // 加载内存变量
-  const memoryVariables = await memory.loadMemoryVariables({});
-  const pastMemories = memoryVariables.past_memories;
+  // 使用适配层将 history 构造成过去记忆字符串，业务不直接依赖 langchain
+  const messages: ChatMessageInput[] = (
+    investment_debate_state.history || []
+  ).map((message: DebateMessage) => ({
+    role: message.role === "human" ? "human" : "ai",
+    content: message.content,
+  }));
+  const pastMemories = await buildPastMemories(messages, memoryKey);
 
   const prompt = parseAndRenderTemplate(researchTemplate, {
     past_memories: pastMemories, // LangChain memory 的输出
