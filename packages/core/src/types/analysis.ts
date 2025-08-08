@@ -7,6 +7,14 @@ export interface AnalysisStepConfig {
   id: string;
   text: string;
   analyst: string;
+  /**
+   * 可选：步骤所需的上游状态字段列表（仅作元数据标注，运行时由编排器读取状态并选择性传递）
+   */
+  inputs?: string[];
+  /**
+   * 可选：步骤产出的状态字段列表（仅作元数据标注，便于 UI/日志展示与维护）
+   */
+  outputs?: string[];
 }
 
 export type StepStatus = "started" | "completed" | "error";
