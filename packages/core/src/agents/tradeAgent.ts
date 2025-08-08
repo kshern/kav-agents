@@ -1,15 +1,19 @@
 import { EventEmitter } from "events";
+import { BaseAgent } from "./BaseAgent";
 import { analyzeFundamentals } from "../abilities/analysts/FundamentalsAnalyst";
 import { analyzeMarket } from "../abilities/analysts/MarketAnalyst";
-import { BaseAgent } from "./BaseAgent";
-import type { AnalystAbility } from "../types";
+import { analyzeNews } from "../abilities";
+import type {
+  AnalystAbility,
+  AnalystCommonProps,
+  DebateResearcherAbility,
+} from "../types";
 import { runStepsStateful, StatefulStep } from "../pipeline/executor";
 import type {
   TradeAgentOutput,
   AnalysisStepConfig,
   ProgressEvent,
 } from "../types";
-import { analyzeNews } from "../abilities";
 import { researchBull } from "../abilities/researchers/BullResearcher";
 import { researchBear } from "../abilities/researchers/BearResearcher";
 // import { manageResearch } from "../abilities/managers/ResearchManager";
@@ -20,6 +24,7 @@ import type { AgentState, Model } from "../types";
  */
 export interface TradeAgentInput {
   symbol: string; // 股票代码
+  debate_rounds?: number; // 辩论轮次（可选，默认3轮）
 }
 
 /**
@@ -64,6 +69,8 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
         "investment_debate_state",
       ],
       outputs: ["investment_debate_state"],
+      debate_group: "main_debate",
+      debate_order: 1,
     },
     {
       id: "bear_researcher",
@@ -77,6 +84,8 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
         "investment_debate_state",
       ],
       outputs: ["investment_debate_state"],
+      debate_group: "main_debate",
+      debate_order: 2,
     },
     // {
     //   id: "manage_research",
@@ -85,7 +94,6 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
     //   inputs: ["investment_debate_state"],
     //   outputs: ["investment_plan", "investment_debate_state"],
     // },
-    
   ];
 
   // 实例使用静态配置
@@ -107,6 +115,9 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
     this.registerAbility("fundamentalsAnalyst", analyzeFundamentals);
     this.registerAbility("marketAnalyst", analyzeMarket);
     this.registerAbility("newsAnalyst", analyzeNews);
+    // 注册辩论型研究员能力，使用键与配置中的 analyst 对齐，便于通用调用
+    this.registerAbility("bullResearcher", researchBull);
+    this.registerAbility("bearResearcher", researchBear);
   }
 
   /**
@@ -131,6 +142,93 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
    */
   private emitProgress(event: ProgressEvent): void {
     this.eventEmitter.emit("progress", event);
+  }
+
+  /**
+   * 基于静态配置 ANALYSIS_STEPS 自动生成可执行步骤，支持多轮辩论
+   * @param debateRounds 辩论轮次
+   * @param modelConfig 模型配置
+   */
+  private buildStepsFromConfig(
+    debateRounds: number,
+    modelConfig: Model
+  ): Array<StatefulStep<AgentState>> {
+    const steps: Array<StatefulStep<AgentState>> = [];
+    const processedGroups = new Set<string>();
+
+    for (const cfg of this.analysisSteps) {
+      // 若为辩论分组：只在第一次遇到该分组时展开所有轮次与成员
+      if (cfg.debate_group) {
+        if (processedGroups.has(cfg.debate_group)) continue;
+        processedGroups.add(cfg.debate_group);
+
+        const groupMembers = this.analysisSteps
+          .filter((c) => c.debate_group === cfg.debate_group)
+          .slice()
+          .sort((a, b) => (a.debate_order ?? 0) - (b.debate_order ?? 0));
+
+        for (let i = 1; i <= debateRounds; i++) {
+          for (const m of groupMembers) {
+            steps.push({
+              id: `${m.id}_r${i}`,
+              text: `${m.text}（第${i}轮）`,
+              run: async (state) => {
+                const ability = this.getAbility<DebateResearcherAbility>(
+                  m.analyst
+                );
+                if (!ability) throw new Error(`能力 '${m.analyst}' 未注册.`);
+
+                const {
+                  investment_debate_state,
+                  market_report,
+                  sentiment_report,
+                  news_report,
+                  fundamentals_report,
+                } = state;
+
+                const { investment_debate_state: updated } = await ability({
+                  state: {
+                    market_report: market_report || "",
+                    sentiment_report: sentiment_report || "",
+                    news_report: news_report || "",
+                    fundamentals_report: fundamentals_report || "",
+                    investment_debate_state: investment_debate_state || {
+                      history: [],
+                      count: 0,
+                    },
+                  },
+                  modelConfig,
+                });
+                return {
+                  investment_debate_state: updated,
+                } as Partial<AgentState>;
+              },
+            });
+          }
+        }
+
+        continue;
+      }
+
+      // 非分组：按配置生成单步（通用 inputs -> state 参数映射）
+      steps.push({
+        id: cfg.id,
+        text: cfg.text,
+        run: async (state) => {
+          const analyst = this.getAbility<AnalystAbility>(cfg.analyst);
+          if (!analyst) throw new Error(`能力 '${cfg.analyst}' 未注册.`);
+          // 统一向通用分析师传递最小必要参数，满足 AnalystAbility 的入参类型
+          const payload: AnalystCommonProps = {
+            company_of_interest: state.company_of_interest,
+            trade_date: state.trade_date,
+          };
+          const res = await analyst(payload);
+          return res as Partial<AgentState>;
+        },
+      });
+    }
+
+    return steps;
   }
 
   /**
@@ -180,99 +278,11 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
       messages: [],
     };
 
-    // 构建“有状态”的执行步骤
-    const steps: Array<StatefulStep<AgentState>> = [
-      {
-        id: "analyze_fundamentals",
-        text: "分析公司基本面",
-        run: async (state) => {
-          const analyst = this.getAbility<AnalystAbility>("fundamentalsAnalyst");
-          if (!analyst) throw new Error("能力 'fundamentalsAnalyst' 未注册.");
-          const res = await analyst({
-            company_of_interest: state.company_of_interest,
-            trade_date: state.trade_date,
-          });
-          // res: { fundamentals_report: string }
-          return res as Partial<AgentState>;
-        },
-      },
-      {
-        id: "analyze_market",
-        text: "分析市场环境",
-        run: async (state) => {
-          const analyst = this.getAbility<AnalystAbility>("marketAnalyst");
-          if (!analyst) throw new Error("能力 'marketAnalyst' 未注册.");
-          const res = await analyst({
-            company_of_interest: state.company_of_interest,
-            trade_date: state.trade_date,
-          });
-          // res: { market_report: string }
-          return res as Partial<AgentState>;
-        },
-      },
-      {
-        id: "analyze_news",
-        text: "分析新闻",
-        run: async (state) => {
-          const analyst = this.getAbility<AnalystAbility>("newsAnalyst");
-          if (!analyst) throw new Error("能力 'newsAnalyst' 未注册.");
-          const res = await analyst({
-            company_of_interest: state.company_of_interest,
-            trade_date: state.trade_date,
-          });
-          // res: { news_report: string }
-          return res as Partial<AgentState>;
-        },
-      },
-      {
-        id: "bull_researcher",
-        text: "牛方研究员辩论",
-        run: async (state) => {
-          const { investment_debate_state, market_report, sentiment_report, news_report, fundamentals_report } = state;
-          const { investment_debate_state: updated } = await researchBull({
-            state: {
-              market_report: market_report || "",
-              sentiment_report: sentiment_report || "",
-              news_report: news_report || "",
-              fundamentals_report: fundamentals_report || "",
-              investment_debate_state: investment_debate_state || { history: [], count: 0 },
-            },
-            modelConfig,
-          });
-          return { investment_debate_state: updated } as Partial<AgentState>;
-        },
-      },
-      {
-        id: "bear_researcher",
-        text: "熊方研究员辩论",
-        run: async (state) => {
-          const { investment_debate_state, market_report, sentiment_report, news_report, fundamentals_report } = state;
-          const { investment_debate_state: updated } = await researchBear({
-            state: {
-              market_report: market_report || "",
-              sentiment_report: sentiment_report || "",
-              news_report: news_report || "",
-              fundamentals_report: fundamentals_report || "",
-              investment_debate_state: investment_debate_state || { history: [], count: 0 },
-            },
-            modelConfig,
-          });
-          return { investment_debate_state: updated } as Partial<AgentState>;
-        },
-      },
-      // {
-      //   id: "manage_research",
-      //   text: "研究经理裁决与投资计划",
-      //   run: async (state) => {
-      //     const { investment_debate_state } = state;
-      //     const { investment_debate_state: updated, investment_plan } = await manageResearch({
-      //       investment_debate_state: investment_debate_state || { history: [], count: 0 },
-      //       modelConfig,
-      //     });
-      //     return { investment_debate_state: updated, investment_plan } as Partial<AgentState>;
-      //   },
-      // },
-    ];
+    // 根据输入参数控制辩论轮次（默认3轮），并由配置自动生成步骤
+    const debateRounds = Number.isInteger(input.debate_rounds)
+      ? Math.max(1, input.debate_rounds as number)
+      : 3;
+    const steps = this.buildStepsFromConfig(debateRounds, modelConfig);
 
     try {
       const results = await runStepsStateful<AgentState>(steps, initialState, {

@@ -15,6 +15,16 @@ export interface AnalysisStepConfig {
    * 可选：步骤产出的状态字段列表（仅作元数据标注，便于 UI/日志展示与维护）
    */
   outputs?: string[];
+  /**
+   * 可选：步骤属于哪个辩论分组（同一分组会在执行时按轮次交替展开）
+   * 例如：bull/bear 同时标注为 "main_debate"
+   */
+  debate_group?: string;
+  /**
+   * 可选：在同一辩论分组内的发言顺序（从 1 开始）。
+   * 例如：1 表示先手（通常牛方），2 表示后手（通常熊方）。
+   */
+  debate_order?: number;
 }
 
 export type StepStatus = "started" | "completed" | "error";

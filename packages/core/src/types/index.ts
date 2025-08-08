@@ -184,6 +184,21 @@ export type AnalystAbility<
 > = (props: TInput) => Promise<TOutput>;
 
 /**
+ * @type DebateResearcherAbility
+ * @description 辩论型研究员（牛/熊）通用能力函数签名，避免在业务侧硬编码具体名称
+ */
+export type DebateResearcherAbility = (props: {
+  state: {
+    market_report: string;
+    sentiment_report: string;
+    news_report: string;
+    fundamentals_report: string;
+    investment_debate_state: InvestDebateState;
+  };
+  modelConfig: Model;
+}) => Promise<{ investment_debate_state: InvestDebateState }>;
+
+/**
  * @interface FundamentalsAnalystProps
  * @description 基本面分析师的属性
  */
