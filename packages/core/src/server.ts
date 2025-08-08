@@ -8,6 +8,8 @@ export * from './abilities/analysts/FundamentalsAnalyst';
 export * from './abilities/analysts/MarketAnalyst';
 export * from './abilities/analysts/NewsAnalyst';
 
+export * from './agents/tradeAgent';
+
 
 // 服务端类型导出
 export * from './types';
