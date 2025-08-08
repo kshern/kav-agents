@@ -22,7 +22,6 @@ export async function generateContent({
   modelConfig: Model;
   prompt: string;
 }): Promise<string> {
-
   // 根据 provider 字段分发到对应的模型服务
   switch (modelConfig.provider) {
     case "google":

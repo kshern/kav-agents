@@ -9,7 +9,7 @@ import Mustache from "mustache";
  */
 export const fillPromptTemplate = <T extends Record<string, string>>(
   template: string,
-  data: T
+  data: T,
 ): string => {
   return Object.entries(data).reduce((acc, [key, value]) => {
     const regex = new RegExp(`{{${key}}}`, "g");
@@ -27,7 +27,7 @@ export const fillPromptTemplate = <T extends Record<string, string>>(
 export const parseAndRenderTemplate = <T extends Record<string, unknown>>(
   template: string,
   variables: T,
-  debug: boolean = false
+  debug: boolean = false,
 ): string => {
   try {
     // 使用 gray-matter 解析模板内容
@@ -57,6 +57,8 @@ export const parseAndRenderTemplate = <T extends Record<string, unknown>>(
     return finalPrompt;
   } catch (error) {
     console.error("解析模板时出错:", error);
-    throw new Error(`解析模板时出错: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(
+      `解析模板时出错: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
 };

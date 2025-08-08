@@ -9,7 +9,7 @@
  */
 export interface ChatMessage {
   /** 消息发送者的角色 */
-  role: 'user' | 'model';
+  role: "user" | "model";
   /** 消息内容 */
   content: string;
 }

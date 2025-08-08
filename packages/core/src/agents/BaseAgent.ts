@@ -4,10 +4,10 @@
  */
 export abstract class BaseAgent<TInput = unknown, TOutput = unknown> {
   /** Agent 名称，用于日志与监控 */
-  protected abstract readonly name: string
+  protected abstract readonly name: string;
 
   /** 运行时上下文，可用于缓存数据或共享依赖 */
-  protected readonly context: Record<string, unknown> = {}
+  protected readonly context: Record<string, unknown> = {};
 
   /** 初始化钩子：子类可重写，用于加载模型、配置、依赖等 */
   public async init(): Promise<void> {
@@ -19,7 +19,7 @@ export abstract class BaseAgent<TInput = unknown, TOutput = unknown> {
    * @param input 外部输入数据
    * @returns 输出结果
    */
-  public abstract run(input: TInput): Promise<TOutput>
+  public abstract run(input: TInput): Promise<TOutput>;
 
   /**
    * 向上下文注册依赖/能力
@@ -27,7 +27,7 @@ export abstract class BaseAgent<TInput = unknown, TOutput = unknown> {
    * @param ability 依赖实例
    */
   protected registerAbility(key: string, ability: unknown): void {
-    this.context[key] = ability
+    this.context[key] = ability;
   }
 
   /**
@@ -36,7 +36,7 @@ export abstract class BaseAgent<TInput = unknown, TOutput = unknown> {
    * @returns 依赖实例或 undefined
    */
   protected getAbility<U>(key: string): U | undefined {
-    return this.context[key] as U | undefined
+    return this.context[key] as U | undefined;
   }
 
   /**
@@ -45,7 +45,7 @@ export abstract class BaseAgent<TInput = unknown, TOutput = unknown> {
    */
   protected log(message: string): void {
     // eslint-disable-next-line no-console
-    console.log(`[${this.name}] ${message}`)
+    console.log(`[${this.name}] ${message}`);
   }
 
   /**
@@ -54,7 +54,7 @@ export abstract class BaseAgent<TInput = unknown, TOutput = unknown> {
    */
   protected handleError(err: unknown): never {
     // eslint-disable-next-line no-console
-    console.error(`[${this.name}]`, err)
-    throw err
+    console.error(`[${this.name}]`, err);
+    throw err;
   }
 }

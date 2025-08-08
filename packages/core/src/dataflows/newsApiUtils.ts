@@ -20,14 +20,14 @@ const NEWS_API_KEY = process.env.NEWS_API_KEY;
 export async function getNewsFromApi(
   query: string,
   fromDate: string,
-  toDate: string
+  toDate: string,
 ): Promise<NewsArticle[]> {
   //   if (NEWS_API_KEY === 'YOUR_API_KEY_HERE') {
   //     throw new Error('请在 newsApiUtils.ts 文件中配置 NewsAPI.org 的 API 密钥。');
   //   }
 
   const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(
-    query
+    query,
   )}&from=${fromDate}&to=${toDate}&sortBy=publishedAt&apiKey=${NEWS_API_KEY}`;
   console.log(url);
   try {

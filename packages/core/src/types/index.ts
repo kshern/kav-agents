@@ -3,22 +3,30 @@
  * @description 核心共享类型定义
  */
 
-import type { AgentState, InvestDebateState, RiskDebateState } from "./agentStates";
-export type { AgentState, InvestDebateState, RiskDebateState } from "./agentStates";
+import type {
+  AgentState,
+  InvestDebateState,
+  RiskDebateState,
+} from "./agentStates";
+export type {
+  AgentState,
+  InvestDebateState,
+  RiskDebateState,
+} from "./agentStates";
 export * from "./analysis";
 
 /**
  * 定义了可以对游戏状态值执行的比较操作符。
  */
 export type ConditionOperator =
-  | 'eq'  // 等于
-  | 'neq' // 不等于
-  | 'gt'  // 大于
-  | 'gte' // 大于或等于
-  | 'lt'  // 小于
-  | 'lte' // 小于或等于
-  | 'contains' // 字符串或数组包含
-  | '!contains'; // 字符串或数组不包含
+  | "eq" // 等于
+  | "neq" // 不等于
+  | "gt" // 大于
+  | "gte" // 大于或等于
+  | "lt" // 小于
+  | "lte" // 小于或等于
+  | "contains" // 字符串或数组包含
+  | "!contains"; // 字符串或数组不包含
 
 /**
  * @interface Condition
@@ -58,7 +66,7 @@ export interface BaseProperty {
  */
 export interface TextProperty extends BaseProperty {
   /** 类型标识 */
-  type: 'text';
+  type: "text";
 }
 
 /**
@@ -67,7 +75,7 @@ export interface TextProperty extends BaseProperty {
  */
 export interface ProgressProperty extends BaseProperty {
   /** 类型标识 */
-  type: 'progress';
+  type: "progress";
   /** 最小值 */
   min?: number;
   /** 最大值 */
@@ -82,7 +90,7 @@ export interface ProgressProperty extends BaseProperty {
  */
 export interface MetroLineProperty extends BaseProperty {
   /** 类型标识 */
-  type: 'metro-line';
+  type: "metro-line";
 }
 
 /**
@@ -91,7 +99,7 @@ export interface MetroLineProperty extends BaseProperty {
  */
 export interface BooleanProperty extends BaseProperty {
   /** 类型标识 */
-  type: 'boolean';
+  type: "boolean";
 }
 
 /**
@@ -100,7 +108,7 @@ export interface BooleanProperty extends BaseProperty {
  */
 export interface NumberProperty extends BaseProperty {
   /** 类型标识 */
-  type: 'number';
+  type: "number";
   /** 数字到文本的映射 */
   mapping?: Record<string, string>;
 }
@@ -111,7 +119,7 @@ export interface NumberProperty extends BaseProperty {
  */
 export interface ActionProperty extends BaseProperty {
   /** 类型标识，固定为 'action' */
-  type: 'action';
+  type: "action";
   /** 所属部分 */
   part: string;
   /** 动作处理函数/标识 */
@@ -125,9 +133,12 @@ export interface ActionProperty extends BaseProperty {
   /** 是否是高频动作 */
   hot?: boolean;
   /** 行为产生的影响 */
-  effects: Record<string, {
-    base_value_change: number;
-  }>;
+  effects: Record<
+    string,
+    {
+      base_value_change: number;
+    }
+  >;
 }
 
 // 可辨识联合类型，涵盖所有可能的属性类型
@@ -145,7 +156,7 @@ export type Property =
  */
 export interface Model {
   /** 模型供应商，如 'openai' | 'google' */
-  provider: 'openai' | 'google' | 'openrouter' | 'anthropic' | string;
+  provider: "openai" | "google" | "openrouter" | "anthropic" | string;
   /** 模型名称 */
   model_name: string;
   /** API 密钥 */
@@ -250,5 +261,5 @@ export interface AgentInput {
 export interface AgentContext {
   state: AgentState;
   modelConfig: Model;
-  memory: Memory; 
+  memory: Memory;
 }

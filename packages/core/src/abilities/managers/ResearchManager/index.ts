@@ -8,10 +8,7 @@ import { parseAndRenderTemplate } from "../../../utils";
 import researchTemplate from "./research.md?raw";
 import { generateContent } from "../../../models/gateway";
 import { Model } from "../../../types";
-import {
-  BufferMemory,
-  ChatMessageHistory,
-} from "langchain/memory";
+import { BufferMemory, ChatMessageHistory } from "langchain/memory";
 import { HumanMessage, AIMessage } from "@langchain/core/messages";
 
 /**
@@ -37,7 +34,7 @@ export async function manageResearch(props: {
       } else {
         return new AIMessage(message.content);
       }
-    })
+    }),
   );
 
   // 创建 BufferMemory 实例
@@ -59,7 +56,7 @@ export async function manageResearch(props: {
   try {
     const result = await generateContent({
       modelConfig,
-      prompt
+      prompt,
     });
 
     const newInvestDebateState: InvestDebateState = {

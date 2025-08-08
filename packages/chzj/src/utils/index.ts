@@ -3,7 +3,9 @@ import { getNestedValue } from "@core";
 // 扩展 Window 接口，添加自定义方法
 declare global {
   interface Window {
-    getChatMessages: (messageId: string) => Promise<{data: {stat_data: unknown}}[]>;
+    getChatMessages: (
+      messageId: string,
+    ) => Promise<{ data: { stat_data: unknown } }[]>;
     getCurrentMessageId: () => string;
   }
 }
@@ -35,11 +37,15 @@ export async function initGlobalGameData(): Promise<void> {
   try {
     // 这里保留了原来的获取逻辑，如果需要的话
     const messages = await window.getChatMessages(window.getCurrentMessageId());
-    if (!messages || messages.length === 0 || !messages?.[0]?.data || !messages?.[0]?.data?.stat_data) {
+    if (
+      !messages ||
+      messages.length === 0 ||
+      !messages?.[0]?.data ||
+      !messages?.[0]?.data?.stat_data
+    ) {
       throw new Error("无法加载状态数据");
     }
     globalGameData = messages[messages.length - 1].data;
-
   } catch (error) {
     console.error("初始化全局游戏数据失败:", error);
     throw error;
@@ -57,7 +63,7 @@ initGlobalGameData();
 export function getValue(path?: string): unknown {
   if (!globalGameData) {
     console.warn("全局游戏数据未初始化，请先调用 initGlobalGameData()");
-    return '';
+    return "";
   }
 
   // 调用核心库的通用函数，并传入全局数据作为数据源

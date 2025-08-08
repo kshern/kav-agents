@@ -31,7 +31,7 @@ export interface TradePlan {
  */
 export async function createTradePlan(
   state: AgentState,
-  modelConfig: Model
+  modelConfig: Model,
 ): Promise<TradePlan> {
   const prompt = parseAndRenderTemplate(traderTemplate, {
     company_of_interest: state.company_of_interest,
@@ -44,11 +44,9 @@ export async function createTradePlan(
       modelConfig,
       prompt,
     });
-        return { trader_investment_plan: result };
-
+    return { trader_investment_plan: result };
   } catch (error) {
     console.error("Error generating trader plan:", error);
-        return { trader_investment_plan: "生成交易员计划时出错。" };
-
+    return { trader_investment_plan: "生成交易员计划时出错。" };
   }
 }

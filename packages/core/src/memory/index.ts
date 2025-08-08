@@ -32,7 +32,7 @@ export class Memory {
    */
   public async get_memories(
     _current_situation: string,
-    n_matches: number
+    n_matches: number,
   ): Promise<{ recommendation: string }[]> {
     console.log(`Retrieving ${n_matches} memories...`);
     // TODO: 实现基于向量相似度的真实记忆检索逻辑
@@ -40,7 +40,7 @@ export class Memory {
     return Promise.resolve(
       Array.from({ length: n_matches }, (_, i) => ({
         recommendation: `这是第 ${i + 1} 条来自过去相似情况的模拟经验教训。`,
-      }))
+      })),
     );
   }
 

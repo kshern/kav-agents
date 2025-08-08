@@ -12,9 +12,9 @@ import { MarketAnalystProps } from "../../../types";
 // import marketTemplate from './market.md?raw';
 // 然后在 analyzeMarket 函数中传入 marketTemplate 参数
 const modelConfig = {
-    provider: 'openrouter',
-    model_name: 'z-ai/glm-4.5-air:free',
-    api_key: process.env.OPENROUTER_API_KEY,
+  provider: "openrouter",
+  model_name: "z-ai/glm-4.5-air:free",
+  api_key: process.env.OPENROUTER_API_KEY,
 };
 
 /**
@@ -24,7 +24,7 @@ const modelConfig = {
  * @returns - 返回一个包含分析报告的对象。
  */
 export const analyzeMarket = async (
-  props: MarketAnalystProps
+  props: MarketAnalystProps,
 ): Promise<{ market_report: string }> => {
   const { company_of_interest, trade_date } = props;
 
@@ -35,11 +35,8 @@ export const analyzeMarket = async (
     // 2. 构建提示
     // 注意：Alpha Vantage 的免费 API 不直接提供详细的 stockInfo 和 recommendations
     // 我们将使用可用的历史数据来生成报告。
-        // 动态加载市场分析模板
-    const template = await loadTemplate(
-      "market.md",
-      import.meta.url
-    );
+    // 动态加载市场分析模板
+    const template = await loadTemplate("market.md", import.meta.url);
     const prompt = parseAndRenderTemplate(template, {
       company_of_interest,
       trade_date,

@@ -3,11 +3,10 @@
  * @description 定义了在风险管理辩论中持中立观点的函数。
  */
 
-import { AgentState } from '../../../types/agentStates';
-import { fillPromptTemplate } from '../../../utils';
-import { generateContent } from '../../../models/gateway';
-import neutralTemplate from './neutral.md?raw';
-
+import { AgentState } from "../../../types/agentStates";
+import { fillPromptTemplate } from "../../../utils";
+import { generateContent } from "../../../models/gateway";
+import neutralTemplate from "./neutral.md?raw";
 
 /**
  * 基于初步投资计划和所有分析报告，从风险中立的角度生成评估论点。
@@ -15,7 +14,9 @@ import neutralTemplate from './neutral.md?raw';
  * @param state - 当前的 Agent 状态。
  * @returns - 返回包含中立派论点的对象。
  */
-export async function debateNeutral(state: AgentState): Promise<{neutral_argument: string}> {
+export async function debateNeutral(
+  state: AgentState,
+): Promise<{ neutral_argument: string }> {
   const prompt = fillPromptTemplate(neutralTemplate, {
     investment_plan: state.investment_plan,
     risk_debate_history: state.risk_debate_state.history,
@@ -28,7 +29,7 @@ export async function debateNeutral(state: AgentState): Promise<{neutral_argumen
   try {
     const result = await generateContent({
       modelName: "gemini-2.5-flash",
-      prompt
+      prompt,
     });
     return { neutral_argument: result };
   } catch (error) {

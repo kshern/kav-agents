@@ -13,9 +13,9 @@ import { generateContent } from "../../../models/gateway";
 // import newsTemplate from './news.md?raw';
 // 然后在 analyzeNews 函数中传入 newsTemplate 参数
 const modelConfig = {
-    provider: 'openrouter',
-    model_name: 'z-ai/glm-4.5-air:free',
-    api_key: process.env.OPENROUTER_API_KEY,
+  provider: "openrouter",
+  model_name: "z-ai/glm-4.5-air:free",
+  api_key: process.env.OPENROUTER_API_KEY,
 };
 
 /**
@@ -33,7 +33,7 @@ function formatNewsArticles(articles: NewsArticle[]): string {
       - 日期: ${article.date}
       - 摘要: ${article.snippet}
       - 链接: ${article.link}
-    `
+    `,
     )
     .join("\n");
 }
@@ -44,7 +44,7 @@ function formatNewsArticles(articles: NewsArticle[]): string {
  * @returns - 返回一个包含新闻分析报告的对象。
  */
 export async function analyzeNews(
-  props: NewsAnalystProps
+  props: NewsAnalystProps,
 ): Promise<{ news_report: string }> {
   const { company_of_interest, trade_date } = props;
 
@@ -61,7 +61,7 @@ export async function analyzeNews(
     const newsArticles = await getNewsFromApi(
       company_of_interest,
       formatDate(fromDate),
-      formatDate(toDate)
+      formatDate(toDate),
     );
 
     if (newsArticles.length === 0) {
@@ -70,11 +70,8 @@ export async function analyzeNews(
 
     // 2. 格式化新闻并构建提示
     const formattedNews = formatNewsArticles(newsArticles);
-        // 动态加载新闻分析模板
-    const template = await loadTemplate(
-      "news.md",
-      import.meta.url
-    );
+    // 动态加载新闻分析模板
+    const template = await loadTemplate("news.md", import.meta.url);
     const prompt = parseAndRenderTemplate(template, {
       news_articles: formattedNews,
     }); // 用统一工具渲染模板

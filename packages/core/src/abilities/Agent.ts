@@ -3,15 +3,15 @@ import {
   analyzeMarket,
   analyzeNews,
   analyzeSocialMedia,
-} from '../abilities/analysts';
-import { manageResearch, manageRisk } from '../abilities/managers';
-import { researchBear, researchBull } from '../abilities/researchers';
+} from "../abilities/analysts";
+import { manageResearch, manageRisk } from "../abilities/managers";
+import { researchBear, researchBull } from "../abilities/researchers";
 import {
   debateAggressive,
   debateConservative,
   debateNeutral,
-} from '../abilities/risk_mgmt';
-import { createTradePlan, TradePlan } from '../abilities/trader';
+} from "../abilities/risk_mgmt";
+import { createTradePlan, TradePlan } from "../abilities/trader";
 
 /**
  * @interface AgentInput
@@ -89,8 +89,8 @@ export class Agent {
       console.log(`[Agent] 已为 ${this.symbol} 生成交易计划。`);
       return tradePlan;
     } catch (error) {
-      console.error('[Agent] 运行过程中发生错误:', error);
-      throw new Error('Agent执行失败');
+      console.error("[Agent] 运行过程中发生错误:", error);
+      throw new Error("Agent执行失败");
     }
   }
 
@@ -99,14 +99,14 @@ export class Agent {
    * @description 执行研究任务，收集多空双方观点的数据。
    */
   private async _research(): Promise<void> {
-    console.log('[Agent] 步骤 1: 开始研究...');
+    console.log("[Agent] 步骤 1: 开始研究...");
     const [bullData, bearData] = await Promise.all([
       researchBull({ symbol: this.symbol }),
       researchBear({ symbol: this.symbol }),
     ]);
     this.context.bullData = bullData;
     this.context.bearData = bearData;
-    console.log('[Agent] 研究完成。');
+    console.log("[Agent] 研究完成。");
   }
 
   /**
@@ -114,7 +114,7 @@ export class Agent {
    * @description 对研究数据进行多维度分析。
    */
   private async _analyze(): Promise<void> {
-    console.log('[Agent] 步骤 2: 开始多维度分析...');
+    console.log("[Agent] 步骤 2: 开始多维度分析...");
     const [fundamentals, market, news, social] = await Promise.all([
       analyzeFundamentals(this.context.bullData),
       analyzeMarket(this.context.bearData),
@@ -122,7 +122,7 @@ export class Agent {
       analyzeSocialMedia({ symbol: this.symbol }),
     ]);
     this.context.analysis = { fundamentals, market, news, social };
-    console.log('[Agent] 分析完成。');
+    console.log("[Agent] 分析完成。");
   }
 
   /**
@@ -130,14 +130,14 @@ export class Agent {
    * @description 进行风险辩论，综合不同风险偏好的观点。
    */
   private async _debate(): Promise<void> {
-    console.log('[Agent] 步骤 3: 开始风险辩论...');
+    console.log("[Agent] 步骤 3: 开始风险辩论...");
     const [aggressive, conservative, neutral] = await Promise.all([
       debateAggressive(this.context.analysis),
       debateConservative(this.context.analysis),
       debateNeutral(this.context.analysis),
     ]);
     this.context.debate = { aggressive, conservative, neutral };
-    console.log('[Agent] 辩论完成。');
+    console.log("[Agent] 辩论完成。");
   }
 
   /**
@@ -146,12 +146,12 @@ export class Agent {
    * @returns {Promise<TradePlan>}
    */
   private async _createPlan(): Promise<TradePlan> {
-    console.log('[Agent] 步骤 4: 开始创建交易计划...');
+    console.log("[Agent] 步骤 4: 开始创建交易计划...");
     const plan = await createTradePlan({
       analysis: this.context.analysis,
       debate: this.context.debate,
     });
-    console.log('[Agent] 交易计划创建完成。');
+    console.log("[Agent] 交易计划创建完成。");
     return plan;
   }
 
@@ -161,8 +161,8 @@ export class Agent {
    * @param {TradePlan} plan - 生成的交易计划
    */
   private async _manage(plan: TradePlan): Promise<void> {
-    console.log('[Agent] 步骤 5: 开始执行投后管理...');
+    console.log("[Agent] 步骤 5: 开始执行投后管理...");
     await Promise.all([manageRisk(plan), manageResearch(plan)]);
-    console.log('[Agent] 投后管理完成。');
+    console.log("[Agent] 投后管理完成。");
   }
 }

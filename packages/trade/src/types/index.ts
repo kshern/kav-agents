@@ -1,4 +1,4 @@
-import type { Property } from '@core/types';
+import type { Property } from "@core/types";
 
 export interface Station {
   name: string;
@@ -31,5 +31,3 @@ export interface CardConfig {
 export interface GameData {
   [key: string]: unknown;
 }
-
-

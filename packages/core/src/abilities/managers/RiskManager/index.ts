@@ -24,7 +24,8 @@ export async function manageRisk(props: {
   risk_debate_state: RiskDebateState;
   final_trade_decision: string;
 }> {
-  const { risk_debate_state, investment_plan, pastMemories, modelConfig } = props;
+  const { risk_debate_state, investment_plan, pastMemories, modelConfig } =
+    props;
 
   const prompt = parseAndRenderTemplate(riskTemplate, {
     investment_plan: investment_plan,
@@ -35,7 +36,7 @@ export async function manageRisk(props: {
   try {
     const result = await generateContent({
       modelConfig: modelConfig || { model_name: "gemini-2.5-flash" },
-      prompt
+      prompt,
     });
 
     const newRiskDebateState: RiskDebateState = {

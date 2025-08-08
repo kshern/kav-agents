@@ -1,6 +1,6 @@
 // packages/core/src/components/Button/index.tsx
-import React, { ReactNode } from 'react';
-import './Button.scss';
+import React, { ReactNode } from "react";
+import "./Button.scss";
 
 /**
  * @interface ButtonProps
@@ -29,7 +29,12 @@ interface ButtonProps {
  * @component Button
  * @description 一个通用的、可复用的按钮组件
  */
-const Button = ({ children, onClick, disabled = false, className = '' }: ButtonProps) => {
+const Button = ({
+  children,
+  onClick,
+  disabled = false,
+  className = "",
+}: ButtonProps) => {
   const handleClick = () => {
     if (!disabled) {
       onClick();

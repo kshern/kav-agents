@@ -1,14 +1,14 @@
-import { ComponentType } from 'react';
+import { ComponentType } from "react";
 
 /**
  * 分析状态类型
  */
-export type AnalysisStatus = 'idle' | 'processing' | 'complete' | 'error';
+export type AnalysisStatus = "idle" | "processing" | "complete" | "error";
 
 /**
  * 步骤状态类型
  */
-export type StepStatus = 'pending' | 'in-progress' | 'completed' | 'error';
+export type StepStatus = "pending" | "in-progress" | "completed" | "error";
 
 /**
  * 分析步骤类型

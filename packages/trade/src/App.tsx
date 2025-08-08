@@ -1,18 +1,20 @@
-
-import { analyzeFundamentals } from '@core/server';
-import './App.scss';
-import { useState } from 'react';
-import { Button } from '@core';
-
+import { analyzeFundamentals } from "@core/server";
+import "./App.scss";
+import { useState } from "react";
+import { Button } from "@core";
 
 function App() {
-  const [fundamentalsReport, setFundamentalsReport] = useState('');
-  const [marketReport, setMarketReport] = useState('');
-  const [newsReport, setNewsReport] = useState('');
-  const [researchReport, setResearchReport] = useState('');
+  const [fundamentalsReport, setFundamentalsReport] = useState("");
+  const [marketReport, setMarketReport] = useState("");
+  const [newsReport, setNewsReport] = useState("");
+  const [researchReport, setResearchReport] = useState("");
 
   const handleAnalyzeFundamentals = async () => {
-    const result = await analyzeFundamentals({ company_of_interest: 'AAPL', modelConfig: { model_name: 'gemini-2.5-flash' }, trade_date: '2025-07-24' });
+    const result = await analyzeFundamentals({
+      company_of_interest: "AAPL",
+      modelConfig: { model_name: "gemini-2.5-flash" },
+      trade_date: "2025-07-24",
+    });
     setFundamentalsReport(result.fundamentals_report);
   };
   // const handleAnalyzeMarket = async () => {

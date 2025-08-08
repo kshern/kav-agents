@@ -6,6 +6,7 @@
 {{argument_history}}
 
 研究报告摘要：
+
 - 市场报告：{{market_report}}
 - 情绪报告：{{sentiment_report}}
 - 新闻报告：{{news_report}}

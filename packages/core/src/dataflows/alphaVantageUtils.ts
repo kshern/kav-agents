@@ -13,10 +13,10 @@ const ALPHA_VANTAGE_API_KEY = "PKKHAH8M6NXQ1BYQ";
  * @returns - 返回包含股票数据的 JSON 对象。
  */
 export async function getStockData(symbol: string): Promise<any> {
-//   // 检查是否已配置 API 密钥
-//   if (ALPHA_VANTAGE_API_KEY === "YOUR_API_KEY_HERE") {
-//     throw new Error("请在 alphaVantageUtils.ts 文件中配置 Alpha Vantage API 密钥。");
-//   }
+  //   // 检查是否已配置 API 密钥
+  //   if (ALPHA_VANTAGE_API_KEY === "YOUR_API_KEY_HERE") {
+  //     throw new Error("请在 alphaVantageUtils.ts 文件中配置 Alpha Vantage API 密钥。");
+  //   }
 
   const url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&apikey=${ALPHA_VANTAGE_API_KEY}`;
 
@@ -28,13 +28,13 @@ export async function getStockData(symbol: string): Promise<any> {
     const data = await response.json();
 
     // Alpha Vantage 在 API 调用频繁时可能会返回一个提示信息而不是错误
-    if (data['Note']) {
-        throw new Error(`Alpha Vantage API 调用备注: ${data['Note']}`);
+    if (data["Note"]) {
+      throw new Error(`Alpha Vantage API 调用备注: ${data["Note"]}`);
     }
 
     // 检查是否有错误信息
-    if (data['Error Message']) {
-        throw new Error(`Alpha Vantage API 错误: ${data['Error Message']}`);
+    if (data["Error Message"]) {
+      throw new Error(`Alpha Vantage API 错误: ${data["Error Message"]}`);
     }
 
     return data;

@@ -33,7 +33,7 @@ function formatRedditPosts(posts: SocialMediaPost[]): string {
       - 内容: ${post.content.substring(0, 200)}...
       - 赞数: ${post.upvotes}
       - 链接: ${post.url}
-    `
+    `,
     )
     .join("\n");
 }
@@ -65,11 +65,8 @@ export async function analyzeSocialMedia(props: {
 
     // 2. 格式化帖子并构建提示
     const formattedPosts = formatRedditPosts(redditPosts);
-        // 动态加载社交媒体分析模板
-    const template = await loadTemplate(
-      "social.md",
-      import.meta.url
-    );
+    // 动态加载社交媒体分析模板
+    const template = await loadTemplate("social.md", import.meta.url);
     const prompt = parseAndRenderTemplate(template, {
       reddit_posts: formattedPosts,
     }); // 用统一工具渲染模板

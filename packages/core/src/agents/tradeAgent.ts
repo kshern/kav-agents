@@ -96,10 +96,10 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
 
           const analyst = this.getAbility<
             | ((
-                props: FundamentalsAnalystProps
+                props: FundamentalsAnalystProps,
               ) => Promise<{ fundamentals_report: string }>)
             | ((
-                props: MarketAnalystProps
+                props: MarketAnalystProps,
               ) => Promise<{ market_report: string }>)
           >(cfg.analyst);
 
@@ -114,7 +114,7 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
 
           return analyst(analystInput);
         },
-      })
+      }),
     );
 
     try {

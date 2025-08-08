@@ -28,7 +28,7 @@ export interface RunStepsOptions {
 export async function runSteps<TInput>(
   steps: Array<Step<TInput, unknown>>,
   input: TInput,
-  options: RunStepsOptions = {}
+  options: RunStepsOptions = {},
 ): Promise<Array<StepResult>> {
   const results: Array<StepResult> = [];
   const totalSteps = steps.length || 1;

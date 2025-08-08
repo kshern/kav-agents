@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 interface ButtonProps {
   children: React.ReactNode;
@@ -10,12 +10,12 @@ const Button: React.FC<ButtonProps> = ({ children, onClick }) => {
     <button
       onClick={onClick}
       style={{
-        padding: '10px 20px',
-        fontSize: '16px',
-        borderRadius: '5px',
-        border: '1px solid #ccc',
-        backgroundColor: '#f0f0f0',
-        cursor: 'pointer',
+        padding: "10px 20px",
+        fontSize: "16px",
+        borderRadius: "5px",
+        border: "1px solid #ccc",
+        backgroundColor: "#f0f0f0",
+        cursor: "pointer",
       }}
     >
       {children}

@@ -50,7 +50,9 @@ export async function researchBear(props: {
     .join("\n\n");
 
   // 将历史记录格式化为字符串
-  const history_str = history.map((msg) => `${msg.role}: ${msg.content}`).join("\n");
+  const history_str = history
+    .map((msg) => `${msg.role}: ${msg.content}`)
+    .join("\n");
 
   // 动态构建提示
   const prompt = `You are a Bear Analyst making the case against investing in the stock. Your goal is to present a well-reasoned argument emphasizing risks, challenges, and negative indicators. Leverage the provided research and data to highlight potential downsides and counter bullish arguments effectively.
@@ -89,7 +91,8 @@ Use this information to deliver a compelling bear argument, refute the bull's cl
       ...investment_debate_state,
       history: [...history, { role: "ai", content: argument }], // 修复角色类型
       // 修复历史记录类型，从数组操作改为字符串拼接
-      bear_history: (investment_debate_state.bear_history || "") + `\n${argument}`,
+      bear_history:
+        (investment_debate_state.bear_history || "") + `\n${argument}`,
       current_response: argument,
       count: (investment_debate_state.count || 0) + 1,
     };
@@ -101,4 +104,3 @@ Use this information to deliver a compelling bear argument, refute the bull's cl
     return { investment_debate_state };
   }
 }
-

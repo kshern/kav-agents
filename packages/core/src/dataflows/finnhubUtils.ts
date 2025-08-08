@@ -3,8 +3,8 @@
  * @description 该模块用于从本地文件系统读取和处理预存的 Finnhub 数据。
  */
 
-import * as fs from 'fs/promises';
-import * as path from 'path';
+import * as fs from "fs/promises";
+import * as path from "path";
 
 /**
  * 从本地磁盘获取在指定日期范围内的 Finnhub 数据。
@@ -17,32 +17,44 @@ import * as path from 'path';
  * @param period - 时期 (可选, 'annual' 或 'quarterly')。
  * @returns - 返回一个包含筛选后数据的对象。
  */
-export async function getDataInRange(ticker: string, startDate: string, endDate: string, dataType: string, dataDir: string, period?: 'annual' | 'quarterly'): Promise<Record<string, any>> {
+export async function getDataInRange(
+  ticker: string,
+  startDate: string,
+  endDate: string,
+  dataType: string,
+  dataDir: string,
+  period?: "annual" | "quarterly",
+): Promise<Record<string, any>> {
   let dataPath: string;
 
   if (period) {
     dataPath = path.join(
       dataDir,
-      'finnhub_data',
+      "finnhub_data",
       dataType,
-      `${ticker}_${period}_data_formatted.json`
+      `${ticker}_${period}_data_formatted.json`,
     );
   } else {
     dataPath = path.join(
       dataDir,
-      'finnhub_data',
+      "finnhub_data",
       dataType,
-      `${ticker}_data_formatted.json`
+      `${ticker}_data_formatted.json`,
     );
   }
 
   try {
-    const fileContent = await fs.readFile(dataPath, 'utf-8');
+    const fileContent = await fs.readFile(dataPath, "utf-8");
     const data = JSON.parse(fileContent);
 
     const filteredData: Record<string, any> = {};
     for (const key in data) {
-      if (key >= startDate && key <= endDate && Array.isArray(data[key]) && data[key].length > 0) {
+      if (
+        key >= startDate &&
+        key <= endDate &&
+        Array.isArray(data[key]) &&
+        data[key].length > 0
+      ) {
         filteredData[key] = data[key];
       }
     }

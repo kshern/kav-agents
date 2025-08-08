@@ -11,9 +11,9 @@ import { FundamentalsAnalystProps } from "../../../types";
 // import fundamentalsTemplate from './fundamentals.md?raw';
 // 然后在 analyzeFundamentals 函数中传入 fundamentalsTemplate 参数
 const modelConfig = {
-    provider: 'openrouter',
-    model_name: 'z-ai/glm-4.5-air:free',
-    api_key: process.env.OPENROUTER_API_KEY,
+  provider: "openrouter",
+  model_name: "z-ai/glm-4.5-air:free",
+  api_key: process.env.OPENROUTER_API_KEY,
 };
 /**
  * 分析给定公司的基本面信息并生成报告。
@@ -22,13 +22,10 @@ const modelConfig = {
  * @returns - 返回一个包含分析报告的对象。
  */
 export const analyzeFundamentals = async (
-  props: FundamentalsAnalystProps
+  props: FundamentalsAnalystProps,
 ): Promise<{ fundamentals_report: string }> => {
   // 使用公共工具加载模板
-  const template = await loadTemplate(
-    "fundamentals.md",
-    import.meta.url
-  );
+  const template = await loadTemplate("fundamentals.md", import.meta.url);
 
   const { company_of_interest, trade_date } = props;
   const renderedTemplate = parseAndRenderTemplate(template, {
@@ -44,7 +41,7 @@ export const analyzeFundamentals = async (
         trade_date,
         company_of_interest,
       },
-      true // 启用调试输出
+      true, // 启用调试输出
     );
 
     // 不再需要返回元数据，因为它已经在parseAndRenderTemplate函数中处理

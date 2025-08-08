@@ -3,10 +3,10 @@
  * @description 该模块用于从本地文件系统读取和处理预存的 Reddit 数据。
  */
 
-import * as fs from 'fs/promises';
-import * as path from 'path';
-import * as readline from 'readline';
-import { createReadStream } from 'fs';
+import * as fs from "fs/promises";
+import * as path from "path";
+import * as readline from "readline";
+import { createReadStream } from "fs";
 
 /**
  * @interface RedditPost
@@ -21,12 +21,12 @@ export interface RedditPost {
 }
 
 const tickerToCompany: Record<string, string> = {
-  AAPL: 'Apple',
-  MSFT: 'Microsoft',
-  GOOGL: 'Google',
-  AMZN: 'Amazon',
-  TSLA: 'Tesla',
-  NVDA: 'Nvidia',
+  AAPL: "Apple",
+  MSFT: "Microsoft",
+  GOOGL: "Google",
+  AMZN: "Amazon",
+  TSLA: "Tesla",
+  NVDA: "Nvidia",
   // ... (可以从原始 python 文件中复制完整的映射)
 };
 
@@ -45,7 +45,7 @@ export async function fetchTopFromCategory(
   date: string,
   maxLimit: number,
   query?: string,
-  dataPath: string = 'reddit_data'
+  dataPath: string = "reddit_data",
 ): Promise<RedditPost[]> {
   const basePath = path.join(dataPath, category);
   const allContent: RedditPost[] = [];
@@ -55,11 +55,14 @@ export async function fetchTopFromCategory(
     const limitPerSubreddit = Math.floor(maxLimit / files.length);
 
     for (const dataFile of files) {
-      if (!dataFile.endsWith('.jsonl')) continue;
+      if (!dataFile.endsWith(".jsonl")) continue;
 
       const filePath = path.join(basePath, dataFile);
       const fileStream = createReadStream(filePath);
-      const rl = readline.createInterface({ input: fileStream, crlfDelay: Infinity });
+      const rl = readline.createInterface({
+        input: fileStream,
+        crlfDelay: Infinity,
+      });
 
       const subredditContent: RedditPost[] = [];
 
@@ -67,15 +70,21 @@ export async function fetchTopFromCategory(
         if (!line.trim()) continue;
 
         const parsedLine = JSON.parse(line);
-        const postDate = new Date(parsedLine.created_utc * 1000).toISOString().split('T')[0];
+        const postDate = new Date(parsedLine.created_utc * 1000)
+          .toISOString()
+          .split("T")[0];
 
         if (postDate !== date) continue;
 
-        if (query && category.includes('company')) {
+        if (query && category.includes("company")) {
           const companyName = tickerToCompany[query];
-          const searchTerms = companyName ? [query, ...companyName.split(' OR ')] : [query];
-          const found = searchTerms.some(term => 
-            new RegExp(term, 'i').test(parsedLine.title) || new RegExp(term, 'i').test(parsedLine.selftext)
+          const searchTerms = companyName
+            ? [query, ...companyName.split(" OR ")]
+            : [query];
+          const found = searchTerms.some(
+            (term) =>
+              new RegExp(term, "i").test(parsedLine.title) ||
+              new RegExp(term, "i").test(parsedLine.selftext),
           );
           if (!found) continue;
         }
@@ -95,7 +104,10 @@ export async function fetchTopFromCategory(
 
     return allContent;
   } catch (error) {
-    console.error(`Error processing reddit data for category ${category}:`, error);
+    console.error(
+      `Error processing reddit data for category ${category}:`,
+      error,
+    );
     return [];
   }
 }

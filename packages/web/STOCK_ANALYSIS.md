@@ -5,6 +5,7 @@
 ## 1. 功能概述
 
 股票分析模块提供了一个完整的股票分析流程界面，包括：
+
 - 股票代码输入
 - 分析进度实时跟踪
 - 分析结果展示
@@ -39,6 +40,7 @@ src/
 股票代码输入表单组件，负责收集用户输入的股票代码并提交分析请求。
 
 **主要特性：**
+
 - 表单验证（非空检查）
 - 加载状态处理
 - 提交事件处理
@@ -48,6 +50,7 @@ src/
 分析进度跟踪组件，显示整体进度条和各个步骤的状态。
 
 **主要特性：**
+
 - 整体进度百分比显示
 - 步骤列表展示（带状态指示）
 - 当前执行步骤高亮
@@ -57,6 +60,7 @@ src/
 分析结果展示组件，以结构化方式展示股票分析报告。
 
 **主要特性：**
+
 - 报告标题与时间戳
 - 分析摘要
 - 关键指标列表
@@ -69,6 +73,7 @@ src/
 封装了整个股票分析流程的状态管理和业务逻辑。
 
 **主要功能：**
+
 - 管理分析状态（idle/processing/complete）
 - 处理步骤状态更新
 - 模拟分析过程（可替换为实际API调用）
@@ -79,28 +84,38 @@ src/
 ### 5.1 基本用法
 
 ```tsx
-import StockAnalysis from '@/features/stock-analysis';
+import StockAnalysis from "@/features/stock-analysis";
 
 export default function StockAnalysisPage() {
-    return <StockAnalysis />;
+  return <StockAnalysis />;
 }
 ```
 
 ### 5.2 使用单独组件
 
 ```tsx
-import { StockInputForm, ProgressTracker, AnalysisReport, useStockAnalysis } from '@/features/stock-analysis';
+import {
+  StockInputForm,
+  ProgressTracker,
+  AnalysisReport,
+  useStockAnalysis,
+} from "@/features/stock-analysis";
 
 export default function CustomPage() {
-    const { status, steps, progress, handleStartAnalysis } = useStockAnalysis();
-    
-    // 自定义渲染逻辑
-    return (
-        <div>
-            <StockInputForm onSubmit={handleStartAnalysis} isLoading={status === 'processing'} />
-            {status === 'processing' && <ProgressTracker steps={steps} overallProgress={progress} />}
-        </div>
-    );
+  const { status, steps, progress, handleStartAnalysis } = useStockAnalysis();
+
+  // 自定义渲染逻辑
+  return (
+    <div>
+      <StockInputForm
+        onSubmit={handleStartAnalysis}
+        isLoading={status === "processing"}
+      />
+      {status === "processing" && (
+        <ProgressTracker steps={steps} overallProgress={progress} />
+      )}
+    </div>
+  );
 }
 ```
 

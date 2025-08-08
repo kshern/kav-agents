@@ -3,9 +3,9 @@
  * @description 定义了在风险管理辩论中持保守观点的函数。
  */
 
-import { AgentState } from '../../../types/agentStates';
-import { fillPromptTemplate } from '../../../utils';
-import conservativeTemplate from './conservative.md?raw';
+import { AgentState } from "../../../types/agentStates";
+import { fillPromptTemplate } from "../../../utils";
+import conservativeTemplate from "./conservative.md?raw";
 import { generateContent } from "../../../models/gateway";
 
 /**
@@ -14,7 +14,9 @@ import { generateContent } from "../../../models/gateway";
  * @param state - 当前的 Agent 状态。
  * @returns - 返回包含保守派论点的对象。
  */
-export async function debateConservative(state: AgentState): Promise<{conservative_argument: string}> {
+export async function debateConservative(
+  state: AgentState,
+): Promise<{ conservative_argument: string }> {
   const prompt = fillPromptTemplate(conservativeTemplate, {
     investment_plan: state.investment_plan,
     risk_debate_history: state.risk_debate_state.history,
@@ -27,7 +29,7 @@ export async function debateConservative(state: AgentState): Promise<{conservati
   try {
     const result = await generateContent({
       modelName: "gemini-2.5-flash",
-      prompt
+      prompt,
     });
     return { conservative_argument: result };
   } catch (error) {

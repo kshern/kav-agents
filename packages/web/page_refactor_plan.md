@@ -46,19 +46,20 @@ src/
 
 ## 4. 组件拆分明细
 
-| 拆分单元 | 目标文件 | 说明 |
-| --- | --- | --- |
-| StockInputForm | `features/stock-analysis/components/StockInputForm.tsx` | 输入股票代码表单，内部仍可复用 `CInput` & `CButton` |
-| ProgressTracker | `features/stock-analysis/components/ProgressTracker/index.tsx` | 包含整体进度 & 步骤列表 |
-| └─ StepItem | `features/stock-analysis/components/ProgressTracker/StepItem.tsx` | 进度条内单个步骤项 |
-| AnalysisReport | `features/stock-analysis/components/AnalysisReport.tsx` | 分析完成后的报告卡片 |
-| useStockAnalysis | `features/stock-analysis/hooks/useStockAnalysis.ts` | 管理 idle / processing / complete 状态、进度模拟、API 调用 |
-| 类型定义 | `features/stock-analysis/types.ts` | `AnalysisStatus`、`Step`, `AnalysisReport` 等类型 |
-| 页面 | `app/stock-analysis/page.tsx` | 仅管理路由与渲染 `StockAnalysis` 业务组件 |
+| 拆分单元         | 目标文件                                                          | 说明                                                       |
+| ---------------- | ----------------------------------------------------------------- | ---------------------------------------------------------- |
+| StockInputForm   | `features/stock-analysis/components/StockInputForm.tsx`           | 输入股票代码表单，内部仍可复用 `CInput` & `CButton`        |
+| ProgressTracker  | `features/stock-analysis/components/ProgressTracker/index.tsx`    | 包含整体进度 & 步骤列表                                    |
+| └─ StepItem      | `features/stock-analysis/components/ProgressTracker/StepItem.tsx` | 进度条内单个步骤项                                         |
+| AnalysisReport   | `features/stock-analysis/components/AnalysisReport.tsx`           | 分析完成后的报告卡片                                       |
+| useStockAnalysis | `features/stock-analysis/hooks/useStockAnalysis.ts`               | 管理 idle / processing / complete 状态、进度模拟、API 调用 |
+| 类型定义         | `features/stock-analysis/types.ts`                                | `AnalysisStatus`、`Step`, `AnalysisReport` 等类型          |
+| 页面             | `app/stock-analysis/page.tsx`                                     | 仅管理路由与渲染 `StockAnalysis` 业务组件                  |
 
 ## 5. 页面简化思路
 
 `page.tsx` 将只保留：
+
 1. 路由元数据（如 `export const metadata = ...`）。
 2. `export default function StockAnalysisPage()`，内部只负责：
    - `const { status, progress, steps, stockCode, startAnalysis, reset } = useStockAnalysis();`

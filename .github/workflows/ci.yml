@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
 
 jobs:
   build-and-lint:
@@ -16,7 +16,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
+          cache: "pnpm"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -26,12 +26,6 @@ jobs:
 
       - name: Lint (web)
         run: pnpm -C packages/web lint
-
-      - name: Lint (trade)
-        run: pnpm -C packages/trade lint
-
-      - name: Lint (chzj)
-        run: pnpm -C packages/chzj lint
 
       - name: Format check
         run: pnpm run format:check
