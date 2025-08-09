@@ -20,6 +20,7 @@ export interface StepResult<T = unknown> {
 
 export interface RunStepsOptions {
   onProgress?: (event: ProgressEvent) => void;
+  abortSignal?: AbortSignal;
 }
 
 /**
@@ -34,6 +35,9 @@ export async function runSteps<TInput>(
   const totalSteps = steps.length || 1;
 
   for (let i = 0; i < steps.length; i++) {
+    if (options.abortSignal?.aborted) {
+      throw new Error("Aborted");
+    }
     const step = steps[i];
     const progress = Math.round((i / totalSteps) * 100);
 
@@ -97,6 +101,9 @@ export async function runStepsStateful<TState>(
   let state = initialState;
 
   for (let i = 0; i < steps.length; i++) {
+    if (options.abortSignal?.aborted) {
+      throw new Error("Aborted");
+    }
     const step = steps[i];
     const progress = Math.round((i / totalSteps) * 100);
 

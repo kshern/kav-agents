@@ -287,7 +287,10 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
    * @param input 包含股票代码的输入对象
    * @returns 返回一个包含所有分析步骤结果的数组
    */
-  public async run(input: TradeAgentInput): Promise<TradeAgentOutput> {
+  public async run(
+    input: TradeAgentInput,
+    options?: { signal?: AbortSignal },
+  ): Promise<TradeAgentOutput> {
     this.log(`开始为股票 ${input.symbol} 进行分析...`);
 
     // 统一模型配置（供研究员与经理使用）
@@ -346,6 +349,7 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
             result: e.result,
             error: e.error,
           }),
+        abortSignal: options?.signal,
       });
 
       this.log(`股票 ${input.symbol} 的分析完成.`);

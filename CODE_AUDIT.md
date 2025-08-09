@@ -92,16 +92,16 @@
 
 ## 优先级行动清单（待你确认后执行）
 
-- [ ] 高：删除/收敛 `core` Button，移除 `core/src/components/` 与 `core/src/Button.tsx`，并更新导出。
-- [ ] 高：清理 `core` 未使用依赖：`axios`、`cheerio`、`@ai-sdk/openai`、`exponential-backoff`。
-- [ ] 高：统一 `web` ESLint 到 Flat Config，将 `no-restricted-imports` 迁移后删除 `.eslintrc.json`。
-- [ ] 高：在 `core/package.json` 增加 `exports` 与 `files`，验证 `vite build`/`tsc` 产物。
-- [ ] 中：`web/tsconfig.json` 将 `baseUrl` 设为 `"."`，`@/* -> ./src/*`。
-- [ ] 中：`core/tsconfig.json` `esModuleInterop: true`。
-- [ ] 中：`gateway.ts` 默认分支改为显式报错。
-- [ ] 中：SSE 路由透传取消、心跳与清理。
-- [ ] 低：执行器支持 `AbortSignal`/超时/重试/并行分组。
-- [ ] 低：若保留 UI，补充 `react-dom` 为 peer 并完善样式策略。
+- [x] 高：删除/收敛 `core` Button，移除 `core/src/components/` 与 `core/src/Button.tsx`，并更新导出。
+- [x] 高：清理 `core` 未使用依赖：`axios`、`cheerio`、`@ai-sdk/openai`、`exponential-backoff`。（未在依赖与源码中存在）
+- [x] 高：统一 `web` ESLint 到 Flat Config，将 `no-restricted-imports` 迁移后删除 `.eslintrc.json`。（已存在 `eslint.config.mjs`，无 `.eslintrc.json`）
+- [x] 高：在 `core/package.json` 增加 `exports` 与 `files`，验证 `vite build`/`tsc` 产物。（已验证构建通过）
+- [x] 中：`web/tsconfig.json` 将 `baseUrl` 设为 `"."`，`@/* -> ./src/*`。（已为 `baseUrl: "."`，`@/*: ["src/*"]`）
+- [x] 中：`core/tsconfig.json` `esModuleInterop: true`。（已开启）
+- [x] 中：`gateway.ts` 默认分支改为显式报错。（已抛出 `Unknown model provider` 错误）
+- [x] 中：SSE 路由透传取消、心跳与清理。（`web/src/app/api/analysis/stream/route.ts` 已实现）
+- [ ] 低：执行器支持 `AbortSignal`/超时/重试/并行分组。（AbortSignal 已有，其余待定）
+- [x] 低：若保留 UI，补充 `react-dom` 为 peer 并完善样式策略。（不再适用：已移除 UI）
 
 ---
 

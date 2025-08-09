@@ -4,6 +4,17 @@
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "default": "./dist/server.js"
+    }
+  },
+  "files": ["dist"],
   "scripts": {
     "dev": "tsc -w",
     "build": "vite build && tsc"
@@ -12,9 +23,6 @@
   "author": "",
   "license": "ISC",
   "type": "module",
-  "peerDependencies": {
-    "react": "^19.1.0"
-  },
   "devDependencies": {
     "@types/mustache": "^4.2.6",
     "@types/yaml": "^1.9.7",
@@ -24,12 +32,8 @@
   },
   "dependencies": {
     "@ai-sdk/google": "^2.0.1",
-    "@ai-sdk/openai": "^2.0.2",
     "@langchain/core": "^0.3.68",
     "ai": "^5.0.2",
-    "axios": "^1.11.0",
-    "cheerio": "^1.1.2",
-    "exponential-backoff": "^3.1.2",
     "gray-matter": "^4.0.3",
     "langchain": "^0.3.30",
     "mustache": "^4.2.0",

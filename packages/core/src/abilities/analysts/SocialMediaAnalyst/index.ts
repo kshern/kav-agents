@@ -71,8 +71,14 @@ export async function analyzeSocialMedia(props: {
       reddit_posts: formattedPosts,
     }); // 用统一工具渲染模板
 
+    const modelConfig = {
+      provider: "openrouter",
+      model_name: "z-ai/glm-4.5-air:free",
+      api_key: process.env.OPENROUTER_API_KEY,
+    };
+
     const result = await generateContent({
-      modelConfig: { model_name: "gemini-2.5-flash" },
+      modelConfig,
       prompt,
     });
 

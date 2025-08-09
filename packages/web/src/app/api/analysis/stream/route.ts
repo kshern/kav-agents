@@ -23,6 +23,8 @@ export async function GET(request: NextRequest) {
     "Access-Control-Allow-Headers": "Content-Type",
   });
 
+  const encoder = new TextEncoder();
+
   // 创建可读流用于 SSE
   const stream = new ReadableStream({
     start(controller) {
@@ -31,14 +33,27 @@ export async function GET(request: NextRequest) {
       // 监听进度事件
       const progressListener = (event: ProgressEvent) => {
         const data = `data: ${JSON.stringify(event)}\n\n`;
-        controller.enqueue(new TextEncoder().encode(data));
+        controller.enqueue(encoder.encode(data));
       };
-
       tradeAgent.onProgress(progressListener);
+
+      // 心跳保活（每 25s 一次）
+      const heartbeat = setInterval(() => {
+        controller.enqueue(encoder.encode(`:heartbeat\n\n`));
+      }, 25_000);
+
+      // 取消处理：客户端断开时终止任务
+      const onAbort = () => {
+        clearInterval(heartbeat);
+        try {
+          controller.close();
+        } catch {}
+      };
+      request.signal.addEventListener("abort", onAbort, { once: true });
 
       // 开始分析
       tradeAgent
-        .run({ symbol })
+        .run({ symbol }, { signal: request.signal })
         .then((results: unknown[]) => {
           // 发送最终完成事件
           const finalEvent = {
@@ -49,29 +64,30 @@ export async function GET(request: NextRequest) {
             result: results,
           };
           const data = `data: ${JSON.stringify(finalEvent)}\n\n`;
-          controller.enqueue(new TextEncoder().encode(data));
-
-          // 关闭连接
-          controller.close();
+          controller.enqueue(encoder.encode(data));
         })
         .catch((error: unknown) => {
-          // 发送错误事件
-          const errorEvent = {
-            stepId: "error",
-            stepText: "分析失败",
-            status: "error" as const,
-            progress: 0,
-            error: error instanceof Error ? error.message : String(error),
-          };
-          const data = `data: ${JSON.stringify(errorEvent)}\n\n`;
-          controller.enqueue(new TextEncoder().encode(data));
-
-          // 关闭连接
-          controller.close();
+          // 若是取消，发送终止提示；否则发送错误事件
+          const isAbort = error instanceof Error && error.message === "Aborted";
+          const payload = isAbort
+            ? { stepId: "abort", stepText: "已取消", status: "error" as const, progress: 0 }
+            : {
+                stepId: "error",
+                stepText: "分析失败",
+                status: "error" as const,
+                progress: 0,
+                error: error instanceof Error ? error.message : String(error),
+              };
+          const data = `data: ${JSON.stringify(payload)}\n\n`;
+          controller.enqueue(encoder.encode(data));
         })
         .finally(() => {
-          // 清理事件监听器
+          clearInterval(heartbeat);
           tradeAgent.offProgress(progressListener);
+          request.signal.removeEventListener("abort", onAbort);
+          try {
+            controller.close();
+          } catch {}
         });
     },
   });

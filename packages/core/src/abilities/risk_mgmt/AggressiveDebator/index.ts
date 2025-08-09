@@ -8,6 +8,12 @@ import { fillPromptTemplate } from "../../../utils";
 import aggressiveTemplate from "./aggressive.md?raw";
 import { generateContent } from "../../../models/gateway";
 
+const modelConfig = {
+  provider: "openrouter",
+  model_name: "z-ai/glm-4.5-air:free",
+  api_key: process.env.OPENROUTER_API_KEY,
+};
+
 /**
  * 基于初步投资计划和所有分析报告，从激进的角度生成风险评估论点。
  *
@@ -28,7 +34,7 @@ export async function debateAggressive(
 
   try {
     const result = await generateContent({
-      modelName: "gemini-2.5-flash",
+      modelConfig,
       prompt,
     });
     return { aggressive_argument: result };

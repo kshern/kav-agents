@@ -31,6 +31,10 @@ export async function generateContent({
     case "openrouter":
       return generateOpenRouterContent({ modelConfig, prompt });
     default:
-      return generateOpenRouterContent({ modelConfig, prompt });
+      throw new Error(
+        `Unknown model provider: ${String(
+          (modelConfig as any)?.provider
+        )}. Expected one of: "google" | "openai" | "openrouter".`
+      );
   }
 }

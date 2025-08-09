@@ -80,7 +80,7 @@ export class YFinanceUtils {
    * @param symbol - 股票代码。
    * @returns - 返回损益表数据。
    */
-  async getIncomeStmt(symbol: string) {
+  async getIncomeStmt(symbol: string): Promise<any> {
     return await yahooFinance.quoteSummary(symbol, {
       modules: ["incomeStatementHistory"],
     });
@@ -92,7 +92,7 @@ export class YFinanceUtils {
    * @param symbol - 股票代码。
    * @returns - 返回资产负债表数据。
    */
-  async getBalanceSheet(symbol: string) {
+  async getBalanceSheet(symbol: string): Promise<any> {
     return await yahooFinance.quoteSummary(symbol, {
       modules: ["balanceSheetHistory"],
     });
@@ -104,7 +104,7 @@ export class YFinanceUtils {
    * @param symbol - 股票代码。
    * @returns - 返回现金流量表数据。
    */
-  async getCashFlow(symbol: string) {
+  async getCashFlow(symbol: string): Promise<any> {
     return await yahooFinance.quoteSummary(symbol, {
       modules: ["cashflowStatementHistory"],
     });
@@ -116,7 +116,7 @@ export class YFinanceUtils {
    * @param symbol - 股票代码。
    * @returns - 返回分析师建议数据。
    */
-  async getAnalystRecommendations(symbol: string) {
+  async getAnalystRecommendations(symbol: string): Promise<any> {
     return await yahooFinance.quoteSummary(symbol, {
       modules: ["recommendationTrend"],
     });

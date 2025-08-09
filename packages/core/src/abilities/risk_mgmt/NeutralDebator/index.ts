@@ -8,6 +8,12 @@ import { fillPromptTemplate } from "../../../utils";
 import { generateContent } from "../../../models/gateway";
 import neutralTemplate from "./neutral.md?raw";
 
+const modelConfig = {
+  provider: "openrouter",
+  model_name: "z-ai/glm-4.5-air:free",
+  api_key: process.env.OPENROUTER_API_KEY,
+};
+
 /**
  * 基于初步投资计划和所有分析报告，从风险中立的角度生成评估论点。
  *
@@ -28,7 +34,7 @@ export async function debateNeutral(
 
   try {
     const result = await generateContent({
-      modelName: "gemini-2.5-flash",
+      modelConfig,
       prompt,
     });
     return { neutral_argument: result };

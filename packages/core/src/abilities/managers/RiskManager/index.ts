@@ -9,6 +9,12 @@ import riskTemplate from "./risk.md?raw";
 import { generateContent } from "../../../models/gateway";
 import { Model } from "../../../types";
 
+const defaultModelConfig: Model = {
+  provider: "openrouter",
+  model_name: "z-ai/glm-4.5-air:free",
+  api_key: process.env.OPENROUTER_API_KEY,
+};
+
 /**
  * 整合所有分析报告和交易员计划，评估风险辩论，并生成最终的交易决策。
  *
@@ -35,7 +41,7 @@ export async function manageRisk(props: {
 
   try {
     const result = await generateContent({
-      modelConfig: modelConfig || { model_name: "gemini-2.5-flash" },
+      modelConfig: modelConfig || defaultModelConfig,
       prompt,
     });
 

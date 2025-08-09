@@ -3,12 +3,12 @@
  * @description 定义了用于管理研究流程、主持辩论并制定投资计划的函数。
  */
 
-import { InvestDebateState, DebateMessage } from "../../../types/agentStates";
+import { InvestDebateState } from "../../../types/agentStates";
 import { parseAndRenderTemplate } from "../../../utils";
-import researchTemplate from "./research.md?raw";
 import { generateContent } from "../../../models/gateway";
 import { Model } from "../../../types";
 import { buildPastMemories } from "../../../adapters/memory";
+import { loadTemplate } from "../../../utils/templateLoader";
 
 /**
  * 整合所有分析报告，评估投资辩论，并生成最终的投资计划。
@@ -33,7 +33,9 @@ export async function manageResearch(props: {
     memoryKey,
   );
 
-  const prompt = parseAndRenderTemplate(researchTemplate, {
+  // 与 FundamentalsAnalyst 一致的模板加载方式
+  const template = await loadTemplate("research.md", import.meta.url);
+  const prompt = parseAndRenderTemplate(template, {
     past_memories: pastMemories, // LangChain memory 的输出
     debate_history: pastMemories, // 同样使用 memory 的输出
   });

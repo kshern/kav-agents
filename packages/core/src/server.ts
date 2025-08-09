@@ -7,6 +7,8 @@
 export * from "./abilities/analysts/FundamentalsAnalyst";
 export * from "./abilities/analysts/MarketAnalyst";
 export * from "./abilities/analysts/NewsAnalyst";
+// 研究管理（服务端）
+export * from "./abilities/managers/ResearchManager";
 
 export * from "./agents/tradeAgent";
 

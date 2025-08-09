@@ -17,9 +17,13 @@ export abstract class BaseAgent<TInput = unknown, TOutput = unknown> {
   /**
    * 主执行入口，子类必须实现
    * @param input 外部输入数据
+   * @param options 运行选项（如取消信号）
    * @returns 输出结果
    */
-  public abstract run(input: TInput): Promise<TOutput>;
+  public abstract run(
+    input: TInput,
+    options?: { signal?: AbortSignal },
+  ): Promise<TOutput>;
 
   /**
    * 向上下文注册依赖/能力

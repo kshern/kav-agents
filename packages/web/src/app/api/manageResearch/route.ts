@@ -4,9 +4,8 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { manageResearch } from "@core";
-import { Model } from "@core/types";
-import { InvestDebateState } from "@core/models/agentStates";
+import { manageResearch } from "@core/server";
+import type { Model, InvestDebateState } from "@core/server";
 
 /**
  * 请求参数接口定义
