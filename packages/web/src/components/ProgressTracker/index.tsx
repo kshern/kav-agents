@@ -26,10 +26,10 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
       {/* 进度条 */}
       <div>
         <div className="flex justify-between mb-2">
-          <span className="text-base font-medium text-blue-700">
+          <span className="text-sm md:text-base font-medium text-muted-foreground">
             {currentStepText}
           </span>
-          <span className="text-sm font-medium text-blue-700">
+          <span className="text-sm font-medium text-muted-foreground">
             {Math.round(overallProgress)}%
           </span>
         </div>

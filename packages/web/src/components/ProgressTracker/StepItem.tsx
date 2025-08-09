@@ -22,9 +22,9 @@ const StepItem: React.FC<StepItemProps> = ({ step, status, isLast }) => {
         <div
           className={cn(
             "w-10 h-10 rounded-full flex items-center justify-center transition-colors duration-300",
-            status === "pending" && "bg-gray-200 text-gray-500",
-            status === "in-progress" && "bg-blue-500 text-white",
-            status === "completed" && "bg-green-500 text-white",
+            status === "pending" && "bg-muted text-muted-foreground",
+            status === "in-progress" && "bg-primary text-primary-foreground",
+            status === "completed" && "bg-emerald-500 text-white",
           )}
         >
           <Icon
@@ -40,7 +40,7 @@ const StepItem: React.FC<StepItemProps> = ({ step, status, isLast }) => {
           <div
             className={cn(
               "line h-full w-0.5 mt-1 transition-colors duration-300",
-              status === "completed" ? "bg-green-500" : "bg-gray-200",
+              status === "completed" ? "bg-emerald-500" : "bg-muted",
             )}
           ></div>
         )}
@@ -48,10 +48,11 @@ const StepItem: React.FC<StepItemProps> = ({ step, status, isLast }) => {
 
       {/* 步骤文本 */}
       <div className="pt-1.5">
-        <p className="font-semibold text-gray-800">{step.text}</p>
+        <p className="font-medium text-foreground text-sm md:text-base">{step.text}</p>
       </div>
     </div>
   );
-};
+}
+;
 
 export default StepItem;

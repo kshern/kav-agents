@@ -41,13 +41,13 @@ const StockAnalysis: React.FC = () => {
   };
 
   return (
-    <div className="bg-gray-50 flex items-center justify-center min-h-screen p-4">
-      <Card className="w-full max-w-2xl">
+    <div className="min-h-screen bg-gradient-to-b from-white to-slate-50 flex items-center justify-center px-6 py-10">
+      <Card className="w-full max-w-3xl border-border/60 shadow-lg supports-[backdrop-filter]:bg-card/80 backdrop-blur">
         <CardHeader>
-          <CardTitle className="text-center text-3xl font-bold">
+          <CardTitle className="text-center text-2xl md:text-3xl font-semibold tracking-tight">
             智能分析 Agent
           </CardTitle>
-          <CardDescription className="text-center">
+          <CardDescription className="text-center text-muted-foreground">
             输入代码，启动AI为您生成深度分析报告
           </CardDescription>
         </CardHeader>
