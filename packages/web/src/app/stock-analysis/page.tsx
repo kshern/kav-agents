@@ -1,7 +1,5 @@
-"use client";
-
 import React from "react";
-import StockAnalysis from "@/app/stock-analysis";
+import StockAnalysis from "@/features/stock-analysis/StockAnalysis";
 
 /**
  * 股票分析页面

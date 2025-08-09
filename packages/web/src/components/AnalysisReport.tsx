@@ -41,7 +41,7 @@ const AnalysisReport: React.FC<AnalysisReportProps> = ({
           </li>
           <li>
             <span className="text-foreground font-medium">技术趋势:</span>{" "}
-            50日均线向上穿越200日均线，形成"黄金交叉"。
+            50日均线向上穿越200日均线，形成 &quot;黄金交叉&quot;。
           </li>
         </ul>
       </div>

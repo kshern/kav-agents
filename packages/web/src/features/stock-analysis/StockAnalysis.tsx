@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import {
   Card,
@@ -6,10 +8,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import StockInputForm from "../../components/StockInputForm";
-import ProgressTracker from "../../components/ProgressTracker";
-import AnalysisReport from "../../components/AnalysisReport";
-import { useStockAnalysis } from "../../hooks/useStockAnalysis";
+import StockInputForm from "@/components/StockInputForm";
+import ProgressTracker from "@/components/ProgressTracker";
+import AnalysisReport from "@/components/AnalysisReport";
+import { useStockAnalysis } from "@/hooks/useStockAnalysis";
 
 /**
  * 股票分析功能主组件
@@ -58,10 +60,3 @@ const StockAnalysis: React.FC = () => {
 };
 
 export default StockAnalysis;
-
-// 导出所有组件和钩子，便于其他地方使用
-export { default as StockInputForm } from "../../components/StockInputForm";
-export { default as ProgressTracker } from "../../components/ProgressTracker";
-export { default as AnalysisReport } from "../../components/AnalysisReport";
-export { useStockAnalysis } from "../../hooks/useStockAnalysis";
-export * from "../../types";

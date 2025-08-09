@@ -1,17 +1,9 @@
-"use client";
-
-import { Button } from "@/components/ui/button";
-import React from "react";
-import { useRouter } from "next/navigation";
+ import { Button } from "@/components/ui/button";
+ import React from "react";
+ import Link from "next/link";
 
 // 主页面组件
 export default function HomePage() {
-  const router = useRouter();
-
-  // 跳转到股票分析页面
-  const handleNavigateToStockAnalysis = () => {
-    router.push("/stock-analysis");
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-slate-50 flex items-center justify-center px-6">
@@ -24,8 +16,8 @@ export default function HomePage() {
             面向专业投资者的智能研究与分析助手
           </p>
         </div>
-        <Button onClick={handleNavigateToStockAnalysis} size="lg" className="px-8">
-          开始分析
+        <Button asChild size="lg" className="px-8">
+          <Link href="/stock-analysis">开始分析</Link>
         </Button>
       </div>
     </div>

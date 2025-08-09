@@ -39,6 +39,9 @@ const STEP_ICONS: Record<string, React.ComponentType> = {
   researchBull: Brain,
   research_bear: Brain,
   researchBear: Brain,
+  // 新增：与后端 TradeAgent 配置对齐
+  bull_researcher: Brain,
+  bear_researcher: Brain,
   debate_aggressive: Users,
   debateAggressive: Users,
   debate_conservative: Users,
@@ -76,17 +79,45 @@ export function useStockAnalysis(): StockAnalysisHook {
 
       const { success, data } = await response.json();
       if (success && data) {
-        // 将后端配置转换为前端步骤格式
-        const frontendSteps: AnalysisStep[] = data.map(
-          (stepConfig: AnalysisStepConfig) => ({
-            id: stepConfig.id,
-            text: stepConfig.text,
-            icon: STEP_ICONS[stepConfig.id] || Database, // 默认图标
-            status: "pending" as StepStatus,
-          }),
-        );
+        // 将后端配置展开为包含多轮辩论的前端步骤，默认3轮
+        const DEFAULT_ROUNDS = 3;
+        const configs: AnalysisStepConfig[] = data;
 
-        setSteps(frontendSteps);
+        const expanded: AnalysisStep[] = [];
+        const processedGroups = new Set<string>();
+        for (const cfg of configs) {
+          if (cfg.debate_group) {
+            if (processedGroups.has(cfg.debate_group)) continue;
+            processedGroups.add(cfg.debate_group);
+
+            const groupMembers = configs
+              .filter((c) => c.debate_group === cfg.debate_group)
+              .slice()
+              .sort((a, b) => (a.debate_order ?? 0) - (b.debate_order ?? 0));
+
+            for (let i = 1; i <= DEFAULT_ROUNDS; i++) {
+              for (const m of groupMembers) {
+                expanded.push({
+                  id: `${m.id}_r${i}`,
+                  text: `${m.text}（第${i}轮）`,
+                  icon: STEP_ICONS[m.id] || Database,
+                  status: "pending",
+                });
+              }
+            }
+            continue;
+          }
+
+          // 非辩论分组按原样加入
+          expanded.push({
+            id: cfg.id,
+            text: cfg.text,
+            icon: STEP_ICONS[cfg.id] || Database,
+            status: "pending",
+          });
+        }
+
+        setSteps(expanded);
         setIsStepsLoaded(true);
       }
     } catch (error) {
