@@ -1,5 +1,4 @@
  import type { Metadata } from "next";
- import { Inter } from "next/font/google";
  import "./globals.css";
 
 export const metadata: Metadata = {
@@ -7,12 +6,7 @@ export const metadata: Metadata = {
   description: "面向专业投资者的智能研究与分析助手",
 };
 
- // 使用 next/font 加载 Inter，避免自定义字体的 lint 警告
- const inter = Inter({
-   subsets: ["latin"],
-   weight: ["400", "500", "600", "700"],
-   display: "swap",
- });
+ // 全站使用系统字体，见 globals.css 中的 --font-sans 配置
 
 export default function RootLayout({
   children,
@@ -21,7 +15,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN">
-      <body className={`${inter.className} min-h-screen font-sans antialiased`}>
+      <body className="min-h-screen font-sans antialiased">
         {children}
       </body>
     </html>

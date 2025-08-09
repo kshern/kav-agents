@@ -37,6 +37,18 @@ export async function GET(request: NextRequest) {
       };
       tradeAgent.onProgress(progressListener);
 
+      // 立即发送一个“started”事件，确保前端立即收到首包，便于网络面板可见
+      try {
+        const started = {
+          stepId: "started",
+          stepText: "分析开始",
+          status: "started" as const,
+          progress: 0,
+        } satisfies ProgressEvent;
+        const data = `data: ${JSON.stringify(started)}\n\n`;
+        controller.enqueue(encoder.encode(data));
+      } catch {}
+
       // 心跳保活（每 25s 一次）
       const heartbeat = setInterval(() => {
         controller.enqueue(encoder.encode(`:heartbeat\n\n`));

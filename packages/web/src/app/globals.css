@@ -4,8 +4,11 @@
 
 @layer base {
   :root {
-    /* 全局字体变量：与 Google Fonts 中的 Inter 对应 */
-    --font-sans: "Inter";
+    /* 全局字体变量：系统字体栈（优先覆盖中文，随后是各平台通用 sans-serif）*/
+    --font-sans: ui-sans-serif, system-ui, -apple-system,
+      "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC",
+      Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial,
+      "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
     --background: 0 0% 100%;
     --foreground: 0 0% 3.9%;
     --card: 0 0% 100%;
@@ -65,5 +68,5 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-family: var(--font-sans);
 }

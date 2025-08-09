@@ -8,26 +8,39 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import StockInputForm from "@/components/StockInputForm";
 import ProgressTracker from "@/components/ProgressTracker";
 import AnalysisReport from "@/components/AnalysisReport";
 import { useStockAnalysis } from "@/hooks/useStockAnalysis";
+import { usePathname } from "next/navigation";
 
-/**
- * 股票分析功能主组件
- * 整合所有子组件和业务逻辑
- */
-const StockAnalysis: React.FC = () => {
+interface SessionAnalysisProps {
+  initialSymbol?: string;
+}
+
+const SessionAnalysis: React.FC<SessionAnalysisProps> = ({ initialSymbol }) => {
+  const pathname = usePathname();
   const {
     status,
     stockCode,
     steps,
     progress,
-    handleStartAnalysis,
+    handleStartAnalysis: startAnalysisSSE,
     handleReset,
+    isStepsLoaded,
   } = useStockAnalysis();
 
-  // 根据状态渲染不同内容
+  const startedRef = React.useRef(false);
+  React.useEffect(() => {
+    if (initialSymbol && status === "idle" && isStepsLoaded && !startedRef.current) {
+      startedRef.current = true;
+      startAnalysisSSE(initialSymbol);
+      if (typeof window !== "undefined" && pathname) {
+        window.history.replaceState(null, "", pathname);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialSymbol, status, isStepsLoaded, pathname]);
+
   const renderContent = () => {
     switch (status) {
       case "processing":
@@ -37,7 +50,9 @@ const StockAnalysis: React.FC = () => {
       case "idle":
       default:
         return (
-          <StockInputForm onSubmit={handleStartAnalysis} isLoading={false} />
+          <div className="text-center text-muted-foreground py-6">
+            即将开始分析，请稍候...
+          </div>
         );
     }
   };
@@ -50,7 +65,7 @@ const StockAnalysis: React.FC = () => {
             智能分析 Agent
           </CardTitle>
           <CardDescription className="text-center text-muted-foreground">
-            输入代码，启动AI为您生成深度分析报告
+            正在为您生成深度分析报告
           </CardDescription>
         </CardHeader>
         <CardContent>{renderContent()}</CardContent>
@@ -59,4 +74,4 @@ const StockAnalysis: React.FC = () => {
   );
 };
 
-export default StockAnalysis;
+export default SessionAnalysis;
