@@ -66,6 +66,23 @@ export function useStockAnalysis(): StockAnalysisHook {
 
   // 使用 useRef 保存 EventSource 实例
   const eventSourceRef = useRef<EventSource | null>(null);
+  // 追踪页面卸载/隐藏，用于在用户离开页面时避免误报错误
+  const unloadingRef = useRef(false);
+
+  useEffect(() => {
+    const onPageHide = () => {
+      unloadingRef.current = true;
+    };
+    const onBeforeUnload = () => {
+      unloadingRef.current = true;
+    };
+    window.addEventListener("pagehide", onPageHide);
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => {
+      window.removeEventListener("pagehide", onPageHide);
+      window.removeEventListener("beforeunload", onBeforeUnload);
+    };
+  }, []);
 
   /**
    * 从后端获取分析步骤配置
@@ -242,9 +259,19 @@ export function useStockAnalysis(): StockAnalysisHook {
       };
 
       eventSource.onerror = (error) => {
-        console.error("EventSource 连接错误:", error);
-        setStatus("error");
-        eventSource.close();
+        console.warn("EventSource 连接状态变更:", error);
+        // 用户正在离开页面/关闭标签，视为正常中断，不标记为错误
+        if (unloadingRef.current) {
+          try {
+            eventSource.close();
+          } catch {}
+          return;
+        }
+        // 若仍处于 processing 且尚未收到 final/error 事件，则认定为错误
+        setStatus((prev) => (prev === "processing" ? "error" : prev));
+        try {
+          eventSource.close();
+        } catch {}
       };
 
       eventSource.onopen = () => {
