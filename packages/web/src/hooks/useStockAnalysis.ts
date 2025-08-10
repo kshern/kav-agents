@@ -221,8 +221,9 @@ export function useStockAnalysis(): StockAnalysisHook {
   /**
    * 开始分析
    * @param code 股票代码
+   * @param analysisId 可选，会话ID，用于将SSE事件绑定并持久化
    */
-  const handleStartAnalysis = async (code: string) => {
+  const handleStartAnalysis = async (code: string, analysisId?: string) => {
     // 确保步骤配置已加载
     if (!isStepsLoaded) {
       console.warn("分析步骤配置尚未加载完成");
@@ -243,10 +244,9 @@ export function useStockAnalysis(): StockAnalysisHook {
     );
 
     try {
-      // 直接创建 EventSource 连接，使用 GET 方式传递股票代码
-      const eventSource = new EventSource(
-        `/api/analysis/stream?symbol=${encodeURIComponent(code)}`,
-      );
+      // 直接创建 EventSource 连接，使用 GET 方式传递股票代码与会话ID
+      const url = `/api/analysis/stream?symbol=${encodeURIComponent(code)}${analysisId ? `&analysisId=${encodeURIComponent(analysisId)}` : ""}`;
+      const eventSource = new EventSource(url);
       eventSourceRef.current = eventSource;
 
       eventSource.onmessage = (event) => {

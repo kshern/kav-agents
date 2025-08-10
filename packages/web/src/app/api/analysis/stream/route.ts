@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { TradeAgent, ProgressEvent } from "@core/server";
+import { appendEvent } from "@/server/analysisStore";
+
+export const runtime = "nodejs";
 
 /**
  * GET /api/analysis/stream?symbol=xxx
@@ -8,9 +11,13 @@ import { TradeAgent, ProgressEvent } from "@core/server";
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const symbol = searchParams.get("symbol");
+  const analysisId = searchParams.get("analysisId");
 
   if (!symbol) {
     return NextResponse.json({ error: "股票代码不能为空" }, { status: 400 });
+  }
+  if (!analysisId) {
+    return NextResponse.json({ error: "analysisId 不能为空" }, { status: 400 });
   }
 
   // 设置 SSE 响应头
@@ -25,6 +32,13 @@ export async function GET(request: NextRequest) {
 
   const encoder = new TextEncoder();
 
+  // 统一存储接口封装（JSONL/SQL 可替换）
+  const writeLine = async (type: "started" | "progress" | "final" | "error" | "aborted", event?: unknown) => {
+    try {
+      await appendEvent(analysisId, symbol, type, event);
+    } catch {}
+  };
+
   // 创建可读流用于 SSE
   const stream = new ReadableStream({
     start(controller) {
@@ -35,6 +49,8 @@ export async function GET(request: NextRequest) {
       const progressListener = (event: ProgressEvent) => {
         if (aborted) return;
         try {
+          // 持久化每条进度事件
+          void writeLine("progress", event);
           const data = `data: ${JSON.stringify(event)}\n\n`;
           controller.enqueue(encoder.encode(data));
         } catch {}
@@ -49,6 +65,7 @@ export async function GET(request: NextRequest) {
           status: "started" as const,
           progress: 0,
         } satisfies ProgressEvent;
+        void writeLine("started", started);
         const data = `data: ${JSON.stringify(started)}\n\n`;
         controller.enqueue(encoder.encode(data));
       } catch {}
@@ -63,6 +80,8 @@ export async function GET(request: NextRequest) {
         aborted = true;
         clearInterval(heartbeat);
         tradeAgent.offProgress(progressListener);
+        // 记录取消
+        void writeLine("aborted");
         try {
           controller.close();
         } catch {}
@@ -83,6 +102,7 @@ export async function GET(request: NextRequest) {
             result: results,
           };
           try {
+            void writeLine("final", finalEvent);
             const data = `data: ${JSON.stringify(finalEvent)}\n\n`;
             controller.enqueue(encoder.encode(data));
           } catch {}
@@ -100,6 +120,7 @@ export async function GET(request: NextRequest) {
             error: error instanceof Error ? error.message : String(error),
           };
           try {
+            void writeLine("error", payload);
             const data = `data: ${JSON.stringify(payload)}\n\n`;
             controller.enqueue(encoder.encode(data));
           } catch {}

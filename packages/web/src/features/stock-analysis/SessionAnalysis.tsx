@@ -15,9 +15,10 @@ import { usePathname } from "next/navigation";
 
 interface SessionAnalysisProps {
   initialSymbol?: string;
+  analysisId?: string;
 }
 
-const SessionAnalysis: React.FC<SessionAnalysisProps> = ({ initialSymbol }) => {
+const SessionAnalysis: React.FC<SessionAnalysisProps> = ({ initialSymbol, analysisId }) => {
   const pathname = usePathname();
   const {
     status,
@@ -33,13 +34,13 @@ const SessionAnalysis: React.FC<SessionAnalysisProps> = ({ initialSymbol }) => {
   React.useEffect(() => {
     if (initialSymbol && status === "idle" && isStepsLoaded && !startedRef.current) {
       startedRef.current = true;
-      startAnalysisSSE(initialSymbol);
+      startAnalysisSSE(initialSymbol, analysisId);
       if (typeof window !== "undefined" && pathname) {
         window.history.replaceState(null, "", pathname);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialSymbol, status, isStepsLoaded, pathname]);
+  }, [initialSymbol, analysisId, status, isStepsLoaded, pathname]);
 
   const renderContent = () => {
     switch (status) {

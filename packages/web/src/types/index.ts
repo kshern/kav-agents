@@ -66,6 +66,6 @@ export interface StockAnalysisHook {
   steps: AnalysisStep[];
   progress: number;
   isStepsLoaded: boolean; // 新增：步骤配置加载状态
-  handleStartAnalysis: (code: string) => void;
+  handleStartAnalysis: (code: string, analysisId?: string) => void;
   handleReset: () => void;
 }
