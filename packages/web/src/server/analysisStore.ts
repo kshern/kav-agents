@@ -1,6 +1,4 @@
-import { mkdir, readFile } from "fs/promises";
-import path from "path";
-import { appendJSONLSafe } from "@/server/utils/jsonl";
+import type { SupabaseClient } from "@supabase/supabase-js"; // 引入 Supabase 类型，保证类型安全
 
 export type AnalysisEventType = "started" | "progress" | "final" | "error" | "aborted";
 
@@ -11,19 +9,7 @@ export interface StoredLine<T = unknown> {
   payload: { type: AnalysisEventType; event?: T } | { type: "aborted" };
 }
 
-const DATA_DIR = "data";
-
-function getDataDir() {
-  return path.resolve(process.cwd(), DATA_DIR);
-}
-
-function getFilePath(analysisId: string) {
-  return path.join(getDataDir(), `${analysisId}.jsonl`);
-}
-
-export async function ensureDataDir() {
-  await mkdir(getDataDir(), { recursive: true });
-}
+// 已移除本地 JSONL 持久化逻辑，仅保留日志输出与 Supabase 云端存储
 
 export async function appendEvent<T = unknown>(
   analysisId: string,
@@ -31,34 +17,135 @@ export async function appendEvent<T = unknown>(
   type: AnalysisEventType,
   event?: T,
   ts: string = new Date().toISOString(),
+  // 新增：Supabase 客户端与用户 ID，用于将“完成态”事件写入云端
+  supabase?: SupabaseClient,
+  userId?: string,
 ) {
-  await ensureDataDir();
-  const line: StoredLine<T> = {
-    analysisId,
-    symbol,
-    ts,
-    payload: type === "aborted" ? { type } : { type, event },
-  };
-  const file = getFilePath(analysisId);
-  // 使用封装好的安全追加写入，内部包含跨进程文件锁
-  await appendJSONLSafe(file, line);
-}
+  // 仅记录日志，便于本地开发排查。生产仅依赖 Supabase 存储“完成态/错误态”。
+  // eslint-disable-next-line no-console
+  // console.log("[analysis:event]", { analysisId, symbol, type, ts, event });
 
-export async function readEvents<T = unknown>(analysisId: string): Promise<StoredLine<T>[]> {
+  // 仅将“有效完成”的输出写入 Supabase（跳过 started 与进行中的 progress）
+  // 约定：
+  // - 当 type === 'final' 时视为 status='completed'
+  // - 当 type === 'progress' 且 (event as any)?.status === 'completed' 时视为完成
+  // - 当 type === 'error' 时视为 status='error'
+  if (!supabase || !userId) return; // 未提供 Supabase，会仅做本地日志
+
   try {
-    const buf = await readFile(getFilePath(analysisId), "utf-8");
-    const lines = buf.split(/\r?\n/);
-    const out: StoredLine<T>[] = [];
-    for (const l of lines) {
-      if (!l.trim()) continue;
-      try {
-        out.push(JSON.parse(l));
-      } catch {
-        // ignore bad line
+    if (type === "final" || type === "progress" || type === "error") {
+      // 从事件中提取通用字段（保持尽量稳健的类型守卫，不使用 any 直接透传）
+      const e = (event as unknown) as {
+        stepId?: string;
+        stepText?: string;
+        status?: "started" | "completed" | "error";
+        progress?: number;
+        result?: unknown;
+        error?: unknown;
+      } | undefined;
+
+      // 仅在“完成态”或“错误态”写入 Supabase
+      const isCompleted = type === "final" || (type === "progress" && e?.status === "completed");
+      const isError = type === "error";
+      if (!isCompleted && !isError) return; // 进行中的进度与 started 只写本地日志
+
+      const row = {
+        analysis_id: analysisId,
+        user_id: userId,
+        symbol,
+        step_id: e?.stepId ?? (type === "final" ? "final" : type),
+        step_text: e?.stepText ?? (type === "final" ? "分析完成" : undefined),
+        group_key: null as unknown as string | null, // 预留：当前事件模型未提供
+        round_no: 0,
+        member_id: "",
+        member_order: null as unknown as number | null,
+        event_type: isError ? "error" : (type === "final" ? "final" : "progress"),
+        status: isError ? "error" : "completed",
+        progress: typeof e?.progress === "number" ? e.progress : (isError ? 0 : 100),
+        ts: new Date(ts).toISOString(),
+        result_json: undefined as unknown,
+        result_md: undefined as unknown,
+        error: undefined as unknown,
+      };
+
+      // 将 result 智能分流到 json/text，避免强制 any
+      if (!isError) {
+        const r = e?.result;
+        if (typeof r === "string") {
+          row.result_md = r;
+        } else if (r !== undefined) {
+          row.result_json = r as object; // 这里是类型断言：我们不生产 any，仅声明为 object
+        }
+      } else {
+        row.error = (e?.error ?? { message: "unknown error" }) as object;
+      }
+
+      if (isError) {
+        // 错误允许多条，使用 insert
+        const { error: insertErr } = await supabase.from("analysis_events").insert(row).select("id").maybeSingle();
+        if (insertErr) throw insertErr;
+      } else {
+        // 完成态使用 upsert，按 (user_id, analysis_id, step_id, round_no, member_id) 冲突覆盖
+        const { error: upsertErr } = await supabase
+          .from("analysis_events")
+          .upsert(row, { onConflict: "user_id,analysis_id,step_id,round_no,member_id" })
+          .select("id")
+          .maybeSingle();
+        if (upsertErr) throw upsertErr;
       }
     }
-    return out;
-  } catch {
-    return [];
+  } catch (err) {
+    // 云端失败不影响主流程，打印一次日志即可
+    // 真实场景可以接入告警系统
+    // eslint-disable-next-line no-console
+    console.error("写入 Supabase analysis_events 失败:", err);
   }
+}
+
+// 从 Supabase 读取“完成态”事件，按时间升序返回，结构兼容原先的 StoredLine
+export async function readEvents<T = unknown>(
+  analysisId: string,
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<StoredLine<T>[]> {
+  // 先读 Supabase 的完成事件；若失败或为空，可回退本地日志（可选）
+  const out: StoredLine<T>[] = [];
+  try {
+    const { data, error } = await supabase
+      .from("analysis_events")
+      .select(
+        "analysis_id, symbol, ts, event_type, status, step_id, step_text, progress, result_json, result_md, error",
+      )
+      .eq("user_id", userId)
+      .eq("analysis_id", analysisId)
+      .order("ts", { ascending: true });
+    if (error) throw error;
+    if (data) {
+      for (const r of data) {
+        const payload: { type: AnalysisEventType; event: { stepId: string; stepText?: string; status: "completed" | "error"; progress: number; result?: unknown; error?: unknown } } = {
+          type: (r.event_type as AnalysisEventType) ?? "progress",
+          event: {
+            stepId: r.step_id as string,
+            stepText: (r.step_text as string | null) ?? undefined,
+            status: (r.status as "completed" | "error"),
+            progress: (r.progress as number | null) ?? 0,
+          },
+        };
+        if (r.result_md) payload.event.result = r.result_md as unknown;
+        if (r.result_json) payload.event.result = r.result_json as unknown;
+        if (r.error) payload.event.error = r.error as unknown;
+        out.push({
+          analysisId: r.analysis_id,
+          symbol: r.symbol,
+          ts: new Date(r.ts).toISOString(),
+          payload,
+        } as StoredLine<T>);
+      }
+    }
+  } catch (e) {
+    // 读取云端失败仅记录日志，不再回退本地 JSONL
+    // eslint-disable-next-line no-console
+    console.error("读取 Supabase analysis_events 失败:", e);
+  }
+  return out;
 }

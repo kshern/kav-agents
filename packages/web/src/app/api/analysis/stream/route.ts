@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
       headers: { "Content-Type": "application/json", ...Object.fromEntries(res.headers) },
     });
   }
+  const userId = data.user.id;
   const { searchParams } = new URL(request.url);
   const analysisId = searchParams.get("analysisId");
   if (!analysisId) {
@@ -51,7 +52,8 @@ export async function GET(request: NextRequest) {
   // 统一存储接口封装（JSONL/SQL 可替换）
   const writeLine = async (type: "started" | "progress" | "final" | "error" | "aborted", event?: unknown) => {
     try {
-      await appendEvent(analysisId, symbol, type, event);
+      // 这里把 Supabase 客户端与用户 ID 传入，使“完成态”事件能写入云端表 public.analysis_events
+      await appendEvent(analysisId, symbol, type, event, new Date().toISOString(), supabase, userId);
     } catch {}
   };
 
