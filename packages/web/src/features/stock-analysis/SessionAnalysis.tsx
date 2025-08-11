@@ -9,7 +9,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import ProgressTracker from "@/components/ProgressTracker";
-import AnalysisReport from "@/components/AnalysisReport";
 import { useStockAnalysis } from "@/hooks/useStockAnalysis";
 import { usePathname } from "next/navigation";
 
@@ -24,7 +23,6 @@ const SessionAnalysis: React.FC<SessionAnalysisProps> = ({ analysisId }) => {
     steps,
     progress,
     handleStartAnalysis,
-    handleReset,
     isStepsLoaded,
   } = useStockAnalysis();
 
@@ -40,17 +38,6 @@ const SessionAnalysis: React.FC<SessionAnalysisProps> = ({ analysisId }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [analysisId, isStepsLoaded, pathname]);
 
-  const renderContent = () => {
-    switch (status) {
-      case "processing":
-        return <ProgressTracker steps={steps} overallProgress={progress} />;
-      case "complete":
-        return <AnalysisReport onReset={handleReset} />;
-      default:
-        // 移除 idle 状态的占位显示：空闲态不再在此页面展示，由 StartAnalysis 页面负责启动流程与交互
-        return null;
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-slate-50 flex items-center justify-center px-6 py-10">
@@ -63,7 +50,7 @@ const SessionAnalysis: React.FC<SessionAnalysisProps> = ({ analysisId }) => {
             正在为您生成深度分析报告
           </CardDescription>
         </CardHeader>
-        <CardContent>{renderContent()}</CardContent>
+        <CardContent><ProgressTracker steps={steps} overallProgress={progress} /></CardContent>
       </Card>
     </div>
   );

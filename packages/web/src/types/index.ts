@@ -46,6 +46,8 @@ export interface StepItemProps {
 export interface ProgressTrackerProps {
   steps: AnalysisStep[];
   overallProgress: number;
+  // 点击“查看报告”按钮的回调（可选）
+  onViewReport?: () => void;
 }
 
 /**

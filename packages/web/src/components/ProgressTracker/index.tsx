@@ -3,6 +3,7 @@ import { Progress } from "@/components/ui/progress";
 import { ProgressTrackerProps } from "@/types";
 import StepItem from "./StepItem";
 import DebateProgress from "./DebateProgress";
+import { FileText } from "lucide-react";
 
 /**
  * 进度跟踪器组件
@@ -14,8 +15,8 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({ steps, overallProgres
   // 非辩论步骤（用于顶部进度与普通步骤列表）
   const nonDebateSteps = useMemo(() => steps.filter((s) => !isDebate(s.id)), [steps]);
 
-  // 计算仅基于非辩论步骤的总体进度与当前提示文案
-  const { topPercent, currentStepText } = useMemo(() => {
+  // 计算顶部提示文案（非辩论步骤驱动文案），进度条使用 overallProgress 与 Hook 保持一致
+  const currentStepText = useMemo(() => {
     const total = nonDebateSteps.length || 1;
     const done = nonDebateSteps.filter((s) => s.status === "completed").length;
     const percent = Math.round((done / total) * 100);
@@ -23,15 +24,13 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({ steps, overallProgres
 
     // 若非辩论没有 in-progress，但存在辩论在进行，则给出统一提示
     const hasDebateInProgress = steps.some((s) => isDebate(s.id) && s.status === "in-progress");
-    const label = inprog
+    return inprog
       ? inprog.text
       : percent === 100
         ? "分析完成"
         : hasDebateInProgress
           ? "正在进行辩论..."
           : "正在初始化...";
-
-    return { topPercent: percent, currentStepText: label };
   }, [nonDebateSteps, steps]);
 
   // 定位第一次与最后一次辩论步骤，用于将 DebateProgress 内嵌在整体序列中
@@ -52,6 +51,9 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({ steps, overallProgres
     [lastDebateIndex, steps],
   );
 
+  // 是否展示“查看报告”步骤（仅 UI，不绑定点击事件）
+  const showViewReport = useMemo(() => Math.round(overallProgress) >= 100, [overallProgress]);
+
   return (
     <div className="space-y-6">
       {/* 进度条 */}
@@ -64,7 +66,7 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({ steps, overallProgres
             {Math.round(overallProgress)}%
           </span>
         </div>
-        <Progress value={topPercent} />
+        <Progress value={overallProgress} />
       </div>
 
       {/* 步骤列表 */}
@@ -75,7 +77,8 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({ steps, overallProgres
             key={step.id}
             step={step}
             status={step.status}
-            isLast={firstDebateIndex === -1 ? index === beforeDebate.length - 1 : false}
+            // 若无辩论且需要展示“查看报告”步骤，则这里不应标记为最后一项
+            isLast={firstDebateIndex === -1 ? (showViewReport ? false : index === beforeDebate.length - 1) : false}
           />
         ))}
 
@@ -88,9 +91,21 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({ steps, overallProgres
             key={step.id}
             step={step}
             status={step.status}
-            isLast={i === afterDebate.length - 1}
+            // 若后续还要展示“查看报告”步骤，则这里不应标记为最后一项
+            isLast={showViewReport ? false : i === afterDebate.length - 1}
           />
         ))}
+
+        {/* 分析完成后显示“查看报告”步骤（仅 UI，保持美观一致） */}
+        {showViewReport && (
+          <div className="mt-4 pt-4 border-t">
+            <StepItem
+              step={{ id: "view_report", text: "查看报告", icon: FileText }}
+              status="completed"
+              isLast={true}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

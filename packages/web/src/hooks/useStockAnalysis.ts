@@ -191,6 +191,27 @@ export function useStockAnalysis(): StockAnalysisHook {
     };
   }, []);
 
+  // 基于本地步骤状态计算进度，确保包含辩论步骤，避免进度条提前满格
+  useEffect(() => {
+    if (status === "processing") {
+      const total = steps.length;
+      if (total === 0) {
+        setProgress(0);
+        return;
+      }
+      const completed = steps.filter((s) => s.status === "completed").length;
+      const inProgressCount = steps.filter((s) => s.status === "in-progress").length;
+      // 规则：完成计 1，进行中计 0.5；最多 99%，待最终完成事件置 100%
+      let pct = Math.round(((completed + inProgressCount * 0.5) / total) * 100);
+      pct = Math.min(pct, 99);
+      setProgress(pct);
+    } else if (status === "complete") {
+      setProgress(100);
+    } else if (status === "idle") {
+      setProgress(0);
+    }
+  }, [steps, status]);
+
   /**
    * 处理进度事件
    * @param event 进度事件数据
@@ -198,8 +219,7 @@ export function useStockAnalysis(): StockAnalysisHook {
   const handleProgressEvent = (event: ProgressEvent) => {
     console.log("收到进度事件:", event);
 
-    // 更新进度
-    setProgress(event.progress);
+    // 进度改由本地 steps 状态统一计算，这里不直接采用服务端 progress
 
     // 根据事件类型更新步骤状态
     if (event.stepId === "final") {
