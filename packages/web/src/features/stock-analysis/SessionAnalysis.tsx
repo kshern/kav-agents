@@ -23,7 +23,7 @@ const SessionAnalysis: React.FC<SessionAnalysisProps> = ({ analysisId }) => {
     status,
     steps,
     progress,
-    handleStartAnalysis: startAnalysisSSE,
+    handleStartAnalysis,
     handleReset,
     isStepsLoaded,
   } = useStockAnalysis();
@@ -32,7 +32,7 @@ const SessionAnalysis: React.FC<SessionAnalysisProps> = ({ analysisId }) => {
   React.useEffect(() => {
     if (isStepsLoaded && !startedRef.current) {
       startedRef.current = true;
-      startAnalysisSSE(analysisId);
+      handleStartAnalysis(analysisId);
       if (typeof window !== "undefined" && pathname) {
         window.history.replaceState(null, "", pathname);
       }

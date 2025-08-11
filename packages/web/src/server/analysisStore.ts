@@ -1,5 +1,6 @@
-import { mkdir, appendFile, readFile } from "fs/promises";
+import { mkdir, readFile } from "fs/promises";
 import path from "path";
+import { appendJSONLSafe } from "@/server/utils/jsonl";
 
 export type AnalysisEventType = "started" | "progress" | "final" | "error" | "aborted";
 
@@ -38,7 +39,9 @@ export async function appendEvent<T = unknown>(
     ts,
     payload: type === "aborted" ? { type } : { type, event },
   };
-  await appendFile(getFilePath(analysisId), JSON.stringify(line) + "\n", "utf-8");
+  const file = getFilePath(analysisId);
+  // 使用封装好的安全追加写入，内部包含跨进程文件锁
+  await appendJSONLSafe(file, line);
 }
 
 export async function readEvents<T = unknown>(analysisId: string): Promise<StoredLine<T>[]> {

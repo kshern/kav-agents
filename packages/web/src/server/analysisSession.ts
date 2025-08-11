@@ -1,5 +1,6 @@
-import { mkdir, readFile, writeFile } from "fs/promises";
+import { mkdir, readFile } from "fs/promises";
 import path from "path";
+import { appendJSONLSafe } from "@/server/utils/jsonl";
 
 // 会话元数据存储（JSONL）：将 analysisId -> symbol 以行式 JSON 记录持久化到单个文件 data/sessions.jsonl
 // 说明：
@@ -37,7 +38,8 @@ export async function saveSessionSymbol(analysisId: string, symbol: string): Pro
   // 以换行分隔的 JSON 追加模式：若文件不存在，writeFile 会创建；此处采用 append 语义
   // 注意：fs/promises 的 writeFile 不直接提供 append 选项，使用 'a' 标志以追加
   const filePath = getSessionsFilePath();
-  await writeFile(filePath, JSON.stringify(record) + "\n", { encoding: "utf-8", flag: "a" });
+  // 使用封装的安全追加方法，内部包含跨进程文件锁
+  await appendJSONLSafe(filePath, record);
 }
 
 // 读取某个会话的 symbol（若不存在返回 undefined）

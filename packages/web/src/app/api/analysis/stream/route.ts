@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { TradeAgent, ProgressEvent } from "@core/server";
 import { appendEvent } from "@/server/analysisStore";
 import { readSessionSymbol } from "@/server/analysisSession";
+import { createSupabaseServerClient } from "@/server/supabase/client";
 
 export const runtime = "nodejs";
 
@@ -10,6 +11,16 @@ export const runtime = "nodejs";
  * 开始股票分析并通过 Server-Sent Events 实时推送进度
  */
 export async function GET(request: NextRequest) {
+  // 使用 Supabase 校验会话
+  const res = new NextResponse();
+  const supabase = createSupabaseServerClient(request, res);
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data?.user) {
+    return new NextResponse(JSON.stringify({ success: false, error: "未登录" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json", ...Object.fromEntries(res.headers) },
+    });
+  }
   const { searchParams } = new URL(request.url);
   const analysisId = searchParams.get("analysisId");
   if (!analysisId) {
@@ -142,5 +153,8 @@ export async function GET(request: NextRequest) {
     },
   });
 
-  return new NextResponse(stream, { headers });
+  // 返回流，并透传可能刷新的会话 Set-Cookie
+  const sseRes = new NextResponse(stream, { headers });
+  for (const [k, v] of res.headers) sseRes.headers.set(k, v);
+  return sseRes;
 }

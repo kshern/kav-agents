@@ -1,5 +1,6 @@
  import type { Metadata } from "next";
  import "./globals.css";
+ import AuthStatus from "@/components/AuthStatus";
 
 export const metadata: Metadata = {
   title: "KAV Agents — 智能投研",
@@ -16,7 +17,16 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body className="min-h-screen font-sans antialiased">
-        {children}
+        {/* 顶部导航：显示登录状态与入口 */}
+        <header className="w-full border-b">
+          <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
+            <a href="/" className="font-semibold">KAV Agents</a>
+            <AuthStatus />
+          </div>
+        </header>
+        <main className="mx-auto max-w-6xl px-4 py-6">
+          {children}
+        </main>
       </body>
     </html>
   );
