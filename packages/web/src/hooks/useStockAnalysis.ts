@@ -1,4 +1,7 @@
+'use client';
+
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Database,
   LineChart,
@@ -68,6 +71,9 @@ export function useStockAnalysis(): StockAnalysisHook {
   const [steps, setSteps] = useState<AnalysisStep[]>([]);
   const [progress, setProgress] = useState(0);
   const [isStepsLoaded, setIsStepsLoaded] = useState(false);
+
+  // Next.js 路由，用于在重置后跳转到 /stock-analysis
+  const router = useRouter();
 
   // 使用 useRef 保存 EventSource 实例
   const eventSourceRef = useRef<EventSource | null>(null);
@@ -310,6 +316,9 @@ export function useStockAnalysis(): StockAnalysisHook {
     setSteps((prev) =>
       prev.map((step) => ({ ...step, status: "pending" as StepStatus })),
     );
+
+    // 跳转到会话列表页
+    router.push("/stock-analysis");
   };
 
   return {
