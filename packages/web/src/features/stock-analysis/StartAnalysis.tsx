@@ -14,7 +14,7 @@ import { useRouter } from "next/navigation";
 const StartAnalysis: React.FC = () => {
   const router = useRouter();
 
-  // 提交后创建会话并跳转到 /stock-analysis/[analysisId]?symbol=...
+  // 提交后创建会话并跳转到 /stock-analysis/[analysisId]
   const handleSubmitStart = async (code: string) => {
     try {
       const res = await fetch("/api/analysis/session", {
@@ -26,7 +26,8 @@ const StartAnalysis: React.FC = () => {
       const json = await res.json();
       const analysisId: string | undefined = json?.data?.analysisId;
       if (!analysisId) throw new Error("No analysisId returned");
-      router.push(`/stock-analysis/${analysisId}?symbol=${encodeURIComponent(code)}`);
+      // 不再通过 query 传递 symbol，symbol 已在服务端会话中持久化
+      router.push(`/stock-analysis/${analysisId}`);
     } catch (e) {
       console.error("创建分析会话失败:", e);
     }

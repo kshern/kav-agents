@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { TradeAgent, ProgressEvent } from "@core/server";
 import { appendEvent } from "@/server/analysisStore";
+import { readSessionSymbol } from "@/server/analysisSession";
 
 export const runtime = "nodejs";
 
@@ -10,14 +11,18 @@ export const runtime = "nodejs";
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const symbol = searchParams.get("symbol");
   const analysisId = searchParams.get("analysisId");
-
-  if (!symbol) {
-    return NextResponse.json({ error: "股票代码不能为空" }, { status: 400 });
-  }
   if (!analysisId) {
     return NextResponse.json({ error: "analysisId 不能为空" }, { status: 400 });
+  }
+
+  // 优先使用 query 提供的 symbol；若缺失则从会话存储读取
+  let symbol = searchParams.get("symbol") ?? undefined;
+  if (!symbol) {
+    symbol = await readSessionSymbol(analysisId);
+  }
+  if (!symbol) {
+    return NextResponse.json({ error: "无法根据 analysisId 获取 symbol" }, { status: 400 });
   }
 
   // 设置 SSE 响应头

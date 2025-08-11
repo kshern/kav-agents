@@ -3,15 +3,15 @@ import { BaseAgent } from "./BaseAgent";
 import { analyzeFundamentals } from "../abilities/analysts/FundamentalsAnalyst";
 import { analyzeMarket } from "../abilities/analysts/MarketAnalyst";
 import { analyzeNews } from "../abilities";
-import type {
-  AnalystAbility,
-  AnalystCommonProps,
-} from "../types";
+import type { AnalystAbility, AnalystCommonProps } from "../types";
 import { runStepsStateful, StatefulStep } from "../pipeline/executor";
 import type {
   TradeAgentOutput,
   AnalysisStepConfig,
   ProgressEvent,
+  PipelineItemConfig,
+  DebateGroupConfig,
+  DebateMemberConfig,
 } from "../types";
 import { researchBull } from "../abilities/researchers/BullResearcher";
 import { researchBear } from "../abilities/researchers/BearResearcher";
@@ -24,7 +24,8 @@ import { FileLogger } from "../utils/logger";
  */
 export interface TradeAgentInput {
   symbol: string; // 股票代码
-  debate_rounds?: number; // 辩论轮次（可选，默认3轮）
+  debate_rounds?: number; // 辩论轮次（可选，用于覆盖配置中的默认轮次）
+  debate_rounds_by_group?: Record<string, number>; // 按分组覆盖辩论轮次，例如 { main_debate: 2, risk_debate: 1 }
 }
 
 /**
@@ -36,8 +37,16 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
   // 文件日志，记录每一步输入输出，便于离线分析
   private logger = new FileLogger("logs/trade-agent.log");
 
+  // 类型守卫：判断流水线条目是否为辩论分组（避免使用 any）
+  private static isDebateGroupConfig(
+    item: PipelineItemConfig
+  ): item is DebateGroupConfig {
+    return (item as { type?: string }).type === "debate";
+  }
+
   // 定义分析步骤（静态配置，作为唯一数据源）
-  public static readonly ANALYSIS_STEPS: AnalysisStepConfig[] = [
+  // 采用联合类型：普通步骤（AnalysisStepConfig）或辩论分组（type: 'debate'）
+  public static readonly ANALYSIS_STEPS: PipelineItemConfig[] = [
     {
       id: "analyze_fundamentals",
       text: "分析公司基本面",
@@ -60,34 +69,39 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
       outputs: ["news_report"],
     },
     {
-      id: "bull_researcher",
-      text: "牛方研究员辩论",
-      analyst: "bullResearcher",
-      inputs: [
-        "market_report",
-        "sentiment_report",
-        "news_report",
-        "fundamentals_report",
-        "investment_debate_state",
+      type: "debate", // 辩论分组
+      group: "main_debate", // 分组键
+      rounds: 3, // 该分组默认轮次
+      members: [
+        {
+          id: "bull_researcher",
+          text: "牛方研究员辩论",
+          analyst: "bullResearcher",
+          inputs: [
+            "market_report",
+            "sentiment_report",
+            "news_report",
+            "fundamentals_report",
+            "investment_debate_state",
+          ],
+          outputs: ["investment_debate_state"],
+          order: 1,
+        },
+        {
+          id: "bear_researcher",
+          text: "熊方研究员辩论",
+          analyst: "bearResearcher",
+          inputs: [
+            "market_report",
+            "sentiment_report",
+            "news_report",
+            "fundamentals_report",
+            "investment_debate_state",
+          ],
+          outputs: ["investment_debate_state"],
+          order: 2,
+        },
       ],
-      outputs: ["investment_debate_state"],
-      debate_group: "main_debate",
-      debate_order: 1,
-    },
-    {
-      id: "bear_researcher",
-      text: "熊方研究员辩论",
-      analyst: "bearResearcher",
-      inputs: [
-        "market_report",
-        "sentiment_report",
-        "news_report",
-        "fundamentals_report",
-        "investment_debate_state",
-      ],
-      outputs: ["investment_debate_state"],
-      debate_group: "main_debate",
-      debate_order: 2,
     },
     // {
     //   id: "manage_research",
@@ -105,7 +119,7 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
    * 获取分析步骤配置（静态方法）
    * @returns 分析步骤配置数组
    */
-  public static getAnalysisSteps(): AnalysisStepConfig[] {
+  public static getAnalysisSteps(): PipelineItemConfig[] {
     return TradeAgent.ANALYSIS_STEPS;
   }
 
@@ -147,107 +161,179 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
   }
 
   /**
+   * 解析辩论分组的实际轮次（优先级：分组覆盖 > 全局覆盖 > 分组默认 > 3）
+   */
+  private resolveDebateRounds(
+    group: DebateGroupConfig,
+    byGroup?: Record<string, number>,
+    globalOverride?: number
+  ): number {
+    const groupKey = group.group;
+    const groupOverride = byGroup?.[groupKey];
+    const groupDefault =
+      typeof group.rounds === "number" &&
+      Number.isInteger(group.rounds) &&
+      group.rounds > 0
+        ? group.rounds
+        : 3;
+    const hasGroupOverride =
+      typeof groupOverride === "number" &&
+      Number.isInteger(groupOverride) &&
+      groupOverride > 0;
+    const hasGlobalOverride =
+      typeof globalOverride === "number" &&
+      Number.isInteger(globalOverride) &&
+      globalOverride > 0;
+    return hasGroupOverride
+      ? (groupOverride as number)
+      : hasGlobalOverride
+        ? (globalOverride as number)
+        : groupDefault;
+  }
+
+  /**
+   * 根据配置 inputs 动态构造能力所需的 state 片段
+   */
+  private buildDynamicState(
+    inputKeys: string[],
+    state: AgentState
+  ): Record<string, unknown> {
+    const dynamicState: Record<string, unknown> = {};
+    for (const key of inputKeys) {
+      const val = (state as unknown as Record<string, unknown>)[key];
+      if (val !== undefined && val !== null) {
+        dynamicState[key] = val;
+      } else {
+        // 默认值策略：以 *_state 作为对象推断，其余按字符串
+        dynamicState[key] = key.endsWith("_state") ? {} : "";
+      }
+    }
+    return dynamicState;
+  }
+
+  /**
+   * 按 outputs 抽取结果片段，缺失则从旧 state 透传
+   */
+  private extractOutputs(
+    outputKeys: string[],
+    rawResult: Record<string, unknown>,
+    state: AgentState
+  ): Record<string, unknown> {
+    return outputKeys.reduce<Record<string, unknown>>((acc, key) => {
+      const v = rawResult[key];
+      acc[key] =
+        v !== undefined
+          ? v
+          : (state as unknown as Record<string, unknown>)[key];
+      return acc;
+    }, {});
+  }
+
+  /**
+   * 生成辩论步骤的 run 函数（封装日志、入参装配、能力调用与输出提取）
+   */
+  private createDebateRunFn(
+    groupKey: string,
+    member: DebateMemberConfig,
+    round: number,
+    modelConfig: Model
+  ): (state: AgentState) => Promise<Partial<AgentState>> {
+    return async (state: AgentState): Promise<Partial<AgentState>> => {
+      const inputKeys = member.inputs ?? [];
+      const stepId = `${groupKey}__${member.id}_r${round}`;
+      const dynamicState = this.buildDynamicState(inputKeys, state);
+
+      // 输入日志
+      await this.logger.info("TradeAgent", "辩论步骤输入", {
+        stepId,
+        text: `${member.text}（第${round}轮）`,
+        analyst: member.analyst,
+        inputs: inputKeys,
+        state: dynamicState,
+        model: {
+          provider: modelConfig.provider,
+          model_name: modelConfig.model_name,
+        },
+      });
+
+      // 能力调用（宽泛签名）
+      const abilityUnknown = this.getAbility(member.analyst) as unknown;
+      if (typeof abilityUnknown !== "function") {
+        throw new Error(`能力 '${member.analyst}' 未注册.`);
+      }
+      type GenericDebateAbility = (props: {
+        state: Record<string, unknown>;
+        modelConfig: Model;
+      }) => Promise<unknown>;
+      const ability = abilityUnknown as GenericDebateAbility;
+
+      const rawResultUnknown = await ability({
+        state: dynamicState,
+        modelConfig,
+      });
+      const rawResult = rawResultUnknown as Record<string, unknown>;
+
+      // 原始输出日志
+      await this.logger.info("TradeAgent", "辩论步骤原始输出", {
+        stepId,
+        analyst: member.analyst,
+        rawResult,
+      });
+
+      // 输出提取与日志
+      const outputKeys = member.outputs ?? [];
+      const partial = this.extractOutputs(outputKeys, rawResult, state);
+      await this.logger.info("TradeAgent", "辩论步骤提取输出", {
+        stepId,
+        outputs: outputKeys,
+        partial,
+      });
+
+      return partial as Partial<AgentState>;
+    };
+  }
+
+  /**
    * 基于静态配置 ANALYSIS_STEPS 自动生成可执行步骤，支持多轮辩论
    * @param debateRounds 辩论轮次
    * @param modelConfig 模型配置
    */
   private buildStepsFromConfig(
-    debateRounds: number,
+    debateRoundsByGroupOverride: Record<string, number> | undefined, // 按分组覆盖的轮次
+    debateRoundsOverride: number | undefined, // 全局覆盖轮次
     modelConfig: Model
   ): Array<StatefulStep<AgentState>> {
     const steps: Array<StatefulStep<AgentState>> = [];
-    const processedGroups = new Set<string>();
 
-    for (const cfg of this.analysisSteps) {
-      // 若为辩论分组：只在第一次遇到该分组时展开所有轮次与成员
-      if (cfg.debate_group) {
-        if (processedGroups.has(cfg.debate_group)) continue;
-        processedGroups.add(cfg.debate_group);
+    for (const item of this.analysisSteps) {
+      // 分支1：辩论分组
+      if (TradeAgent.isDebateGroupConfig(item)) {
+        const groupItem = item;
+        const groupKey = groupItem.group;
+        const debateRounds = this.resolveDebateRounds(
+          groupItem,
+          debateRoundsByGroupOverride,
+          debateRoundsOverride
+        );
+        const members = [...groupItem.members].sort(
+          (a, b) => (a.order ?? 0) - (b.order ?? 0)
+        );
 
-        const groupMembers = this.analysisSteps
-          .filter((c) => c.debate_group === cfg.debate_group)
-          .slice()
-          .sort((a, b) => (a.debate_order ?? 0) - (b.debate_order ?? 0));
-
-  
         for (let i = 1; i <= debateRounds; i++) {
-          for (const m of groupMembers) {
+          for (const m of members) {
             steps.push({
-              id: `${m.id}_r${i}`,
+              id: `${groupKey}__${m.id}_r${i}`,
               text: `${m.text}（第${i}轮）`,
-              run: async (state) => {
-                // 通用：按配置 inputs 动态装配 props.state，避免任何字段硬编码
-                const inputKeys = m.inputs ?? [];
-                const dynamicState: Record<string, unknown> = {};
-                for (const key of inputKeys) {
-                  const val = (state as unknown as Record<string, unknown>)[key];
-                  if (val !== undefined && val !== null) {
-                    dynamicState[key] = val;
-                  } else {
-                    // 默认值策略（通用）：
-                    // - *_state 推断为对象，默认 {}
-                    // - 其它按字符串处理，默认 ""
-                    dynamicState[key] = key.endsWith("_state") ? {} : "";
-                  }
-                }
-                // 文件日志：记录辩论步骤输入
-                await this.logger.info("TradeAgent", "辩论步骤输入", {
-                  stepId: `${m.id}_r${i}`,
-                  text: `${m.text}（第${i}轮）`,
-                  analyst: m.analyst,
-                  inputs: inputKeys,
-                  state: dynamicState,
-                  model: { provider: modelConfig.provider, model_name: modelConfig.model_name },
-                });
-
-                // 为了完全解耦，这里不对能力参数做字段假设，通过宽泛签名进行调用
-                const abilityUnknown = this.getAbility(m.analyst) as unknown;
-                if (typeof abilityUnknown !== "function") {
-                  throw new Error(`能力 '${m.analyst}' 未注册.`);
-                }
-                type GenericDebateAbility = (props: {
-                  state: Record<string, unknown>;
-                  modelConfig: Model;
-                }) => Promise<unknown>;
-                const ability = abilityUnknown as GenericDebateAbility;
-
-                const rawResult = await ability({
-                  state: dynamicState,
-                  modelConfig,
-                });
-                // 文件日志：记录辩论步骤原始输出
-                await this.logger.info("TradeAgent", "辩论步骤原始输出", {
-                  stepId: `${m.id}_r${i}`,
-                  analyst: m.analyst,
-                  rawResult,
-                });
-
-                // 按配置 outputs 动态抽取返回，避免硬编码输出键
-                const outputKeys = m.outputs ?? [];
-                const partial = outputKeys.reduce<Record<string, unknown>>(
-                  (acc, key) => {
-                    const v = (rawResult as Record<string, unknown>)[key];
-                    acc[key] = v !== undefined ? v : (state as unknown as Record<string, unknown>)[key];
-                    return acc;
-                  },
-                  {},
-                );
-                // 文件日志：记录辩论步骤提取输出
-                await this.logger.info("TradeAgent", "辩论步骤提取输出", {
-                  stepId: `${m.id}_r${i}`,
-                  outputs: outputKeys,
-                  partial,
-                });
-                return partial as Partial<AgentState>;
-              },
+              run: this.createDebateRunFn(groupKey, m, i, modelConfig),
             });
           }
         }
 
-        continue;
+        continue; // 下一个条目
       }
 
-      // 非分组：按配置生成单步（通用 inputs -> state 参数映射）
+      // 分支2：普通步骤（AnalysisStepConfig）
+      const cfg = item as AnalysisStepConfig;
       steps.push({
         id: cfg.id,
         text: cfg.text,
@@ -289,7 +375,7 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
    */
   public async run(
     input: TradeAgentInput,
-    options?: { signal?: AbortSignal },
+    options?: { signal?: AbortSignal }
   ): Promise<TradeAgentOutput> {
     this.log(`开始为股票 ${input.symbol} 进行分析...`);
 
@@ -332,11 +418,18 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
       messages: [],
     };
 
-    // 根据输入参数控制辩论轮次（默认3轮），并由配置自动生成步骤
-    const debateRounds = Number.isInteger(input.debate_rounds)
-      ? Math.max(1, input.debate_rounds as number)
-      : 3;
-    const steps = this.buildStepsFromConfig(debateRounds, modelConfig);
+    // 覆盖策略：优先使用按分组覆盖，其次使用全局覆盖；未提供则交由配置默认生效
+    const debateRoundsByGroupOverride = input.debate_rounds_by_group;
+    const debateRoundsOverride =
+      typeof input.debate_rounds === "number" &&
+      Number.isInteger(input.debate_rounds)
+        ? Math.max(1, input.debate_rounds)
+        : undefined;
+    const steps = this.buildStepsFromConfig(
+      debateRoundsByGroupOverride,
+      debateRoundsOverride,
+      modelConfig
+    );
 
     try {
       const results = await runStepsStateful<AgentState>(steps, initialState, {

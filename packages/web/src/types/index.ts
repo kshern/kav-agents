@@ -53,7 +53,6 @@ export interface ProgressTrackerProps {
  * 分析报告属性
  */
 export interface AnalysisReportProps {
-  stockCode: string;
   onReset: () => void;
 }
 
@@ -62,10 +61,9 @@ export interface AnalysisReportProps {
  */
 export interface StockAnalysisHook {
   status: AnalysisStatus;
-  stockCode: string;
   steps: AnalysisStep[];
   progress: number;
   isStepsLoaded: boolean; // 新增：步骤配置加载状态
-  handleStartAnalysis: (code: string, analysisId?: string) => void;
+  handleStartAnalysis: (analysisId?: string) => void;
   handleReset: () => void;
 }

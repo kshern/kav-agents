@@ -16,7 +16,13 @@ import {
   StepStatus,
   StockAnalysisHook,
 } from "../types";
-import type { ProgressEvent, AnalysisStepConfig } from "@core";
+import type {
+  ProgressEvent,
+  AnalysisStepConfig,
+  PipelineItemConfig,
+  DebateGroupConfig,
+  DebateMemberConfig,
+} from "@core";
 
 // 步骤图标映射
 const STEP_ICONS: Record<string, React.ComponentType> = {
@@ -59,7 +65,6 @@ const STEP_ICONS: Record<string, React.ComponentType> = {
 export function useStockAnalysis(): StockAnalysisHook {
   // 状态管理
   const [status, setStatus] = useState<AnalysisStatus>("idle");
-  const [stockCode, setStockCode] = useState("");
   const [steps, setSteps] = useState<AnalysisStep[]>([]);
   const [progress, setProgress] = useState(0);
   const [isStepsLoaded, setIsStepsLoaded] = useState(false);
@@ -96,26 +101,32 @@ export function useStockAnalysis(): StockAnalysisHook {
 
       const { success, data } = await response.json();
       if (success && data) {
-        // 将后端配置展开为包含多轮辩论的前端步骤，默认3轮
-        const DEFAULT_ROUNDS = 3;
-        const configs: AnalysisStepConfig[] = data;
+        // 说明：自后端改造后，steps 为 PipelineItemConfig 联合类型：
+        // - 普通步骤 AnalysisStepConfig
+        // - 辩论分组 DebateGroupConfig（显式成员与默认轮数）
+        const configs: PipelineItemConfig[] = data as PipelineItemConfig[];
+
+        // 类型守卫：判断是否为辩论分组配置（避免使用 any）
+        const isDebateGroup = (item: PipelineItemConfig): item is DebateGroupConfig => {
+          return (item as { type?: string }).type === "debate";
+        };
 
         const expanded: AnalysisStep[] = [];
-        const processedGroups = new Set<string>();
-        for (const cfg of configs) {
-          if (cfg.debate_group) {
-            if (processedGroups.has(cfg.debate_group)) continue;
-            processedGroups.add(cfg.debate_group);
-
-            const groupMembers = configs
-              .filter((c) => c.debate_group === cfg.debate_group)
-              .slice()
-              .sort((a, b) => (a.debate_order ?? 0) - (b.debate_order ?? 0));
-
-            for (let i = 1; i <= DEFAULT_ROUNDS; i++) {
-              for (const m of groupMembers) {
+        for (const item of configs) {
+          if (isDebateGroup(item)) {
+            // 辩论分组展开：采用分组默认轮次（不存在则回退为 3）
+            const rounds = Number.isInteger(item.rounds) && (item.rounds as number) > 0 ? (item.rounds as number) : 3;
+            const groupKey = item.group; // 与后端保持一致，用于前缀 stepId，确保全局唯一
+            // 成员按 order 排序
+            const members = [...item.members].sort(
+              (a: DebateMemberConfig, b: DebateMemberConfig) => (a.order ?? 0) - (b.order ?? 0),
+            );
+            for (let i = 1; i <= rounds; i++) {
+              for (const m of members) {
+                // 与后端运行时步骤 ID 严格一致：`${group}__${memberId}_r${round}`
+                const stepId = `${groupKey}__${m.id}_r${i}`;
                 expanded.push({
-                  id: `${m.id}_r${i}`,
+                  id: stepId,
                   text: `${m.text}（第${i}轮）`,
                   icon: STEP_ICONS[m.id] || Database,
                   status: "pending",
@@ -125,7 +136,8 @@ export function useStockAnalysis(): StockAnalysisHook {
             continue;
           }
 
-          // 非辩论分组按原样加入
+          // 普通步骤按原样加入
+          const cfg = item as AnalysisStepConfig;
           expanded.push({
             id: cfg.id,
             text: cfg.text,
@@ -223,7 +235,7 @@ export function useStockAnalysis(): StockAnalysisHook {
    * @param code 股票代码
    * @param analysisId 可选，会话ID，用于将SSE事件绑定并持久化
    */
-  const handleStartAnalysis = async (code: string, analysisId?: string) => {
+  const handleStartAnalysis = async (analysisId?: string) => {
     // 确保步骤配置已加载
     if (!isStepsLoaded) {
       console.warn("分析步骤配置尚未加载完成");
@@ -235,7 +247,6 @@ export function useStockAnalysis(): StockAnalysisHook {
       eventSourceRef.current.close();
     }
 
-    setStockCode(code);
     setStatus("processing");
     setProgress(0);
     // 重置所有步骤状态为 pending
@@ -244,8 +255,8 @@ export function useStockAnalysis(): StockAnalysisHook {
     );
 
     try {
-      // 直接创建 EventSource 连接，使用 GET 方式传递股票代码与会话ID
-      const url = `/api/analysis/stream?symbol=${encodeURIComponent(code)}${analysisId ? `&analysisId=${encodeURIComponent(analysisId)}` : ""}`;
+      // 直接创建 EventSource 连接，仅通过 analysisId 建立会话；symbol 由后端通过本地会话存储解析
+      const url = `/api/analysis/stream${analysisId ? `?analysisId=${encodeURIComponent(analysisId)}` : ""}`;
       const eventSource = new EventSource(url);
       eventSourceRef.current = eventSource;
 
@@ -294,7 +305,6 @@ export function useStockAnalysis(): StockAnalysisHook {
     }
 
     setStatus("idle");
-    setStockCode("");
     setProgress(0);
     // 重置所有步骤状态为 pending
     setSteps((prev) =>
@@ -304,7 +314,6 @@ export function useStockAnalysis(): StockAnalysisHook {
 
   return {
     status,
-    stockCode,
     steps,
     progress,
     isStepsLoaded, // 新增：步骤加载状态

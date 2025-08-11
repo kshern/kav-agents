@@ -102,9 +102,12 @@ export default function DebateProgress({ steps }: DebateProgressProps) {
 
               {/* 回合内分项（双方/多方观点） */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {ordered.map((s) => (
+                {ordered.map((s, idx) => (
+                  // 注意：后端的 stepId 在多辩论分组下可能重复（例如 bull_researcher_r1），
+                  // 这里通过附加 idx 生成前端渲染唯一 key，避免 React key 冲突告警。
+                  // 不影响 SSE 匹配，因为业务逻辑仍使用 s.id 作为步骤标识。
                   <span
-                    key={s.id}
+                    key={`${s.id}-${idx}`}
                     className={cn(
                       "inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium ring-1 transition-colors",
                       sideAwareClass(s.status, s.id),

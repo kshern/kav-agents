@@ -8,7 +8,6 @@ import { AnalysisReportProps } from "@/types";
  * 显示股票分析的最终结果报告
  */
 const AnalysisReport: React.FC<AnalysisReportProps> = ({
-  stockCode,
   onReset,
 }) => {
   return (
@@ -16,7 +15,7 @@ const AnalysisReport: React.FC<AnalysisReportProps> = ({
       {/* 报告标题 */}
       <div className="text-center">
         <h2 className="text-2xl md:text-3xl font-semibold tracking-tight text-foreground">
-          分析报告: {stockCode}
+          {/* 分析报告: {stockCode} */}
         </h2>
         <p className="text-xs md:text-sm text-muted-foreground">
           生成于: {new Date().toLocaleString("zh-CN")}
@@ -27,7 +26,7 @@ const AnalysisReport: React.FC<AnalysisReportProps> = ({
       <div className="p-6 rounded-xl border bg-card supports-[backdrop-filter]:bg-card/60 backdrop-blur text-sm md:text-base leading-7 space-y-3">
         <h3 className="font-semibold text-foreground">摘要</h3>
         <p className="text-muted-foreground">
-          根据对 <strong>{stockCode}</strong>{" "}
+          {/* 根据对 <strong>{stockCode}</strong>{" "} */}
           的综合分析，我们发现该公司基本面稳健，近期技术指标显示出积极信号。市场情绪乐观，但需注意宏观经济波动带来的潜在风险。
         </p>
 

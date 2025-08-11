@@ -14,15 +14,13 @@ import { useStockAnalysis } from "@/hooks/useStockAnalysis";
 import { usePathname } from "next/navigation";
 
 interface SessionAnalysisProps {
-  initialSymbol?: string;
   analysisId?: string;
 }
 
-const SessionAnalysis: React.FC<SessionAnalysisProps> = ({ initialSymbol, analysisId }) => {
+const SessionAnalysis: React.FC<SessionAnalysisProps> = ({ analysisId }) => {
   const pathname = usePathname();
   const {
     status,
-    stockCode,
     steps,
     progress,
     handleStartAnalysis: startAnalysisSSE,
@@ -32,29 +30,25 @@ const SessionAnalysis: React.FC<SessionAnalysisProps> = ({ initialSymbol, analys
 
   const startedRef = React.useRef(false);
   React.useEffect(() => {
-    if (initialSymbol && status === "idle" && isStepsLoaded && !startedRef.current) {
+    if (isStepsLoaded && !startedRef.current) {
       startedRef.current = true;
-      startAnalysisSSE(initialSymbol, analysisId);
+      startAnalysisSSE(analysisId);
       if (typeof window !== "undefined" && pathname) {
         window.history.replaceState(null, "", pathname);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialSymbol, analysisId, status, isStepsLoaded, pathname]);
+  }, [analysisId, isStepsLoaded, pathname]);
 
   const renderContent = () => {
     switch (status) {
       case "processing":
         return <ProgressTracker steps={steps} overallProgress={progress} />;
       case "complete":
-        return <AnalysisReport stockCode={stockCode} onReset={handleReset} />;
-      case "idle":
+        return <AnalysisReport onReset={handleReset} />;
       default:
-        return (
-          <div className="text-center text-muted-foreground py-6">
-            即将开始分析，请稍候...
-          </div>
-        );
+        // 移除 idle 状态的占位显示：空闲态不再在此页面展示，由 StartAnalysis 页面负责启动流程与交互
+        return null;
     }
   };
 
