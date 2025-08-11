@@ -16,16 +16,18 @@ const StepItem: React.FC<StepItemProps> = ({ step, status, isLast }) => {
   }, [status, step.icon]);
 
   return (
-    <div className="flex items-start">
+    <div className="flex items-start group">
       <div className="flex flex-col items-center mr-4">
-        {/* 步骤图标 */}
+        {/* 步骤图标：带描边与光晕动效，提升质感 */}
         <div
           className={cn(
-            "w-10 h-10 rounded-full flex items-center justify-center transition-colors duration-300",
-            status === "pending" && "bg-muted text-muted-foreground",
-            status === "in-progress" && "bg-primary text-primary-foreground",
-            status === "completed" && "bg-emerald-500 text-white",
+            "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ring-1",
+            status === "pending" && "bg-muted text-muted-foreground ring-border",
+            status === "in-progress" && "bg-primary text-primary-foreground ring-primary/40 animate-glow",
+            status === "completed" && "bg-emerald-500 text-white ring-emerald-400",
+            "group-hover:scale-[1.03]",
           )}
+          title={step.text}
         >
           <Icon
             className={cn(
@@ -35,12 +37,12 @@ const StepItem: React.FC<StepItemProps> = ({ step, status, isLast }) => {
           />
         </div>
 
-        {/* 连接线（非最后一项才显示） */}
+        {/* 连接线（非最后一项才显示）：根据状态切换颜色 */}
         {!isLast && (
           <div
             className={cn(
               "line h-full w-0.5 mt-1 transition-colors duration-300",
-              status === "completed" ? "bg-emerald-500" : "bg-muted",
+              status === "completed" ? "bg-emerald-500" : status === "in-progress" ? "bg-primary/60" : "bg-muted",
             )}
           ></div>
         )}
