@@ -27,10 +27,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "analysisId 不能为空" }, { status: 400 });
   }
 
-  // 优先使用 query 提供的 symbol；若缺失则从会话存储读取
+  // 优先使用 query 提供的 symbol；若缺失则从 Supabase 会话映射读取
   let symbol = searchParams.get("symbol") ?? undefined;
   if (!symbol) {
-    symbol = await readSessionSymbol(analysisId);
+    symbol = await readSessionSymbol(supabase, analysisId);
   }
   if (!symbol) {
     return NextResponse.json({ error: "无法根据 analysisId 获取 symbol" }, { status: 400 });

@@ -20,11 +20,11 @@ export async function POST(req: NextRequest) {
     const symbol = body?.symbol as string | undefined;
     const analysisId = randomUUID();
 
-    // 若提供了 symbol，则在本地持久化映射：analysisId -> symbol
+    // 若提供了 symbol，则在 Supabase 持久化映射：analysisId -> symbol
     // 这样后续接口只需携带 analysisId 即可取回 symbol
     if (symbol) {
       try {
-        await saveSessionSymbol(analysisId, symbol);
+        await saveSessionSymbol(supabase, analysisId, symbol, data.user.id);
       } catch (e) {
         console.warn("保存会话 symbol 失败（不影响创建流程）:", e);
       }

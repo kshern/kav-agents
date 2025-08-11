@@ -1,67 +1,54 @@
-import { mkdir, readFile } from "fs/promises";
-import path from "path";
-import { appendJSONLSafe } from "@/server/utils/jsonl";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
-// 会话元数据存储（JSONL）：将 analysisId -> symbol 以行式 JSON 记录持久化到单个文件 data/sessions.jsonl
-// 说明：
-// - 与现有文件落地风格一致，避免引入外部依赖
-// - 使用单一 JSONL 文件，减少文件数量，每条记录形如 { analysisId, symbol, ts }
-// - 读取时按行扫描，返回匹配 analysisId 的最新一条记录的 symbol
+// 使用 Supabase 表存储 analysisId -> symbol 的会话映射
+// 建议的表结构（请在 Supabase SQL 控制台执行一次建表/RLS 配置）：
+//   create table if not exists public.analysis_sessions (
+//     analysis_id text primary key,
+//     symbol text not null,
+//     user_id uuid not null references auth.users(id),
+//     created_at timestamptz not null default now()
+//   );
+// 开启 RLS：
+//   alter table public.analysis_sessions enable row level security;
+// 策略（仅示例，按需调整）：
+//   create policy "own rows insert" on public.analysis_sessions for insert with check (auth.uid() = user_id);
+//   create policy "own rows select" on public.analysis_sessions for select using (auth.uid() = user_id);
+//   create policy "own rows update" on public.analysis_sessions for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
-const DATA_DIR = "data";
-const SESSIONS_FILENAME = "sessions.jsonl";
-
-function getSessionsFilePath(): string {
-  // 使用工作目录下 data/sessions.jsonl
-  return path.resolve(process.cwd(), DATA_DIR, SESSIONS_FILENAME);
-}
-
-export interface SessionRecord {
-  analysisId: string;
-  symbol: string;
-  ts: string; // ISO 时间戳
-}
-
-export async function ensureSessionDir(): Promise<void> {
-  // 仅确保 data 目录存在
-  await mkdir(path.resolve(process.cwd(), DATA_DIR), { recursive: true });
-}
-
-// 保存（追加）某个会话的 symbol 到 JSONL
-export async function saveSessionSymbol(analysisId: string, symbol: string): Promise<void> {
-  await ensureSessionDir();
-  const record: SessionRecord = {
-    analysisId,
-    symbol,
-    ts: new Date().toISOString(),
-  };
-  // 以换行分隔的 JSON 追加模式：若文件不存在，writeFile 会创建；此处采用 append 语义
-  // 注意：fs/promises 的 writeFile 不直接提供 append 选项，使用 'a' 标志以追加
-  const filePath = getSessionsFilePath();
-  // 使用封装的安全追加方法，内部包含跨进程文件锁
-  await appendJSONLSafe(filePath, record);
+// 保存/更新某个会话的 symbol（同一 analysisId 使用 upsert）
+export async function saveSessionSymbol(
+  supabase: SupabaseClient,
+  analysisId: string,
+  symbol: string,
+  userId: string,
+): Promise<void> {
+  // 采用 upsert，保证幂等（按 analysis_id 唯一约束）
+  const { error } = await supabase
+    .from("analysis_sessions")
+    .upsert(
+      { analysis_id: analysisId, symbol, user_id: userId },
+      { onConflict: "analysis_id" },
+    )
+    .select("analysis_id")
+    .single();
+  if (error) {
+    // 统一向上抛出，调用方决定是否吞并
+    throw new Error(`保存会话映射失败：${error.message}`);
+  }
 }
 
 // 读取某个会话的 symbol（若不存在返回 undefined）
-export async function readSessionSymbol(analysisId: string): Promise<string | undefined> {
-  try {
-    const buf = await readFile(getSessionsFilePath(), "utf-8");
-    // 按行解析，查找最后一个匹配的记录
-    const lines = buf.split(/\r?\n/);
-    for (let i = lines.length - 1; i >= 0; i--) {
-      const line = lines[i].trim();
-      if (!line) continue;
-      try {
-        const json = JSON.parse(line) as Partial<SessionRecord>;
-        if (json.analysisId === analysisId && typeof json.symbol === "string" && json.symbol.length > 0) {
-          return json.symbol;
-        }
-      } catch {
-        // 略过损坏的行，继续向上查找
-      }
-    }
-    return undefined;
-  } catch {
-    return undefined;
+export async function readSessionSymbol(
+  supabase: SupabaseClient,
+  analysisId: string,
+): Promise<string | undefined> {
+  const { data, error } = await supabase
+    .from("analysis_sessions")
+    .select("symbol")
+    .eq("analysis_id", analysisId)
+    .maybeSingle();
+  if (error) {
+    throw new Error(`读取会话映射失败：${error.message}`);
   }
+  return data?.symbol ?? undefined;
 }
