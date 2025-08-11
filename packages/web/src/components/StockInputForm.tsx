@@ -10,13 +10,14 @@ import { StockInputFormProps } from "@/types";
  */
 const StockInputForm: React.FC<StockInputFormProps> = ({
   onSubmit,
-  isLoading,
 }) => {
   const [stockCode, setStockCode] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (stockCode.trim()) {
+      setIsLoading(true);
       onSubmit(stockCode.trim());
     }
   };

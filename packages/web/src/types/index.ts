@@ -25,7 +25,6 @@ export interface AnalysisStep {
  */
 export interface StockInputFormProps {
   onSubmit: (stockCode: string) => void;
-  isLoading: boolean;
 }
 
 /**

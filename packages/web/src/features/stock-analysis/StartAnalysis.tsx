@@ -45,7 +45,7 @@ const StartAnalysis: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <StockInputForm onSubmit={handleSubmitStart} isLoading={false} />
+          <StockInputForm onSubmit={handleSubmitStart}/>
         </CardContent>
       </Card>
     </div>
