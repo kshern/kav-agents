@@ -3,7 +3,7 @@ import { BaseAgent } from "./BaseAgent";
 import { analyzeFundamentals } from "../abilities/analysts/FundamentalsAnalyst";
 import { analyzeMarket } from "../abilities/analysts/MarketAnalyst";
 import { analyzeNews } from "../abilities";
-import type { AnalystAbility, AnalystCommonProps } from "../types";
+import type { CommonAbility } from "../types";
 import { runStepsStateful, StatefulStep } from "../pipeline/executor";
 import type {
   TradeAgentOutput,
@@ -280,12 +280,10 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
   ): Record<string, unknown> {
     const dynamicState: Record<string, unknown> = {};
     for (const key of inputKeys) {
+      // 只按 keys 取已有值，不注入任何默认值
       const val = (state as unknown as Record<string, unknown>)[key];
-      if (val !== undefined && val !== null) {
+      if (val !== undefined) {
         dynamicState[key] = val;
-      } else {
-        // 默认值策略：以 *_state 作为对象推断，其余按字符串
-        dynamicState[key] = key.endsWith("_state") ? {} : "";
       }
     }
     return dynamicState;
@@ -438,22 +436,20 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
         id: cfg.id,
         text: cfg.text,
         run: async (state) => {
-          const analyst = this.getAbility<AnalystAbility>(cfg.analyst);
+          const analyst = this.getAbility<CommonAbility>(cfg.analyst);
           if (!analyst) throw new Error(`能力 '${cfg.analyst}' 未注册.`);
-          // 统一向通用分析师传递最小必要参数，满足 AnalystAbility 的入参类型
-          const payload: AnalystCommonProps = {
-            company_of_interest: state.company_of_interest,
-            trade_date: state.trade_date,
-          };
+          // 根据配置 inputs 动态构造入参
+          const inputKeys = cfg.inputs || [];
+          const dynamicState = this.buildDynamicState(inputKeys, state);
           // 文件日志：记录普通步骤输入
           await this.logger.info("TradeAgent", "普通步骤输入", {
             stepId: cfg.id,
             text: cfg.text,
             analyst: cfg.analyst,
-            inputs: ["company_of_interest", "trade_date"],
-            state: payload,
+            inputs: inputKeys,
+            state: dynamicState,
           });
-          const res = await analyst(payload);
+          const res = await analyst(dynamicState);
           // 文件日志：记录普通步骤输出
           await this.logger.info("TradeAgent", "普通步骤输出", {
             stepId: cfg.id,

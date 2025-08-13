@@ -170,17 +170,16 @@ export interface Model {
  * @interface AnalystCommonProps
  * @description 所有分析师输入的通用属性
  */
-export interface AnalystCommonProps {
-  trade_date: string; // 交易日期
-  company_of_interest: string; // 公司名称
+export interface CommonProps {
+  [key: string]: unknown;
 }
 
 /**
- * @type AnalystAbility
- * @description 通用的分析师能力函数类型，输入为通用属性，输出为未知（由具体实现决定）
+ * @type CommonAbility
+ * @description 通用的能力函数类型，输入为通用属性，输出为未知（由具体实现决定）
  */
-export type AnalystAbility<
-  TInput extends AnalystCommonProps = AnalystCommonProps,
+export type CommonAbility<
+  TInput extends CommonProps = CommonProps,
   TOutput = unknown,
 > = (props: TInput) => Promise<TOutput>;
 
@@ -205,13 +204,13 @@ export type DebateResearcherAbility = (props: {
  * @interface FundamentalsAnalystProps
  * @description 基本面分析师的属性
  */
-export interface FundamentalsAnalystProps extends AnalystCommonProps {}
+export interface FundamentalsAnalystProps extends CommonProps {}
 
 /**
  * @interface MarketAnalystProps
  * @description 市场分析师的属性
  */
-export interface MarketAnalystProps extends AnalystCommonProps {}
+export interface MarketAnalystProps extends CommonProps {}
 
 // 定义新闻文章的结构
 export interface NewsArticle {
@@ -226,11 +225,7 @@ export interface NewsArticle {
  * @interface NewsAnalystProps
  * @description 新闻分析师的属性
  */
-export interface NewsAnalystProps {
-  // 复用通用的分析师输入属性
-  trade_date: string; // 交易日期
-  company_of_interest: string; // 公司名称
-}
+export interface NewsAnalystProps extends CommonProps {}
 
 // 定义 ResearchManager Agent 的输入参数类型
 export interface ResearchManagerProps {
