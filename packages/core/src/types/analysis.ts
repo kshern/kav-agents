@@ -18,7 +18,11 @@ export interface MemoryConfig {
 export interface AnalysisStepConfig {
   id: string;
   text: string;
-  analyst: string;
+  /**
+   * 能力键（新的更通用命名）
+   * 建议优先使用 ability；analyst 将逐步淘汰
+   */
+  ability: string;
   /**
    * 可选：步骤所需的上游状态字段列表（仅作元数据标注，运行时由编排器读取状态并选择性传递）
    */
@@ -56,7 +60,10 @@ export interface AnalysisStepConfig {
 export interface DebateMemberConfig {
   id: string; // 成员步骤ID
   text: string; // 成员显示文案
-  analyst: string; // 成员能力键
+  /**
+   * 成员能力键（新的更通用命名）
+   */
+  ability: string;
   inputs?: string[]; // 输入状态键
   outputs?: string[]; // 输出状态键
   order?: number; // 组内顺序，1 开始（省略则默认按出现顺序）
@@ -85,6 +92,12 @@ export interface DebateGroupConfig {
  * 流水线条目联合类型：要么是普通步骤（AnalysisStepConfig），要么是辩论分组（DebateGroupConfig）
  */
 export type PipelineItemConfig = AnalysisStepConfig | DebateGroupConfig;
+
+/**
+ * 更通用的别名，供逐步迁移使用
+ */
+export type StepConfig = AnalysisStepConfig;
+export type WorkflowItemConfig = PipelineItemConfig;
 
 export type StepStatus = "started" | "completed" | "error";
 

@@ -3,6 +3,7 @@ import { BaseAgent } from "./BaseAgent";
 import { analyzeFundamentals } from "../abilities/analysts/FundamentalsAnalyst";
 import { analyzeMarket } from "../abilities/analysts/MarketAnalyst";
 import { analyzeNews } from "../abilities";
+import { manageResearch } from "../abilities/managers/ResearchManager";
 import type { CommonAbility } from "../types";
 import { runStepsStateful, StatefulStep } from "../pipeline/executor";
 import type {
@@ -130,21 +131,21 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
     {
       id: "analyze_fundamentals",
       text: "分析公司基本面",
-      analyst: "fundamentalsAnalyst",
+      ability: "fundamentalsAnalyst",
       inputs: ["company_of_interest", "trade_date"],
       outputs: ["fundamentals_report"],
     },
     {
       id: "analyze_market",
       text: "分析市场环境",
-      analyst: "marketAnalyst",
+      ability: "marketAnalyst",
       inputs: ["company_of_interest", "trade_date"],
       outputs: ["market_report"],
     },
     {
       id: "analyze_news",
       text: "分析新闻",
-      analyst: "newsAnalyst",
+      ability: "newsAnalyst",
       inputs: ["company_of_interest", "trade_date"],
       outputs: ["news_report"],
     },
@@ -156,7 +157,7 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
         {
           id: "bull_researcher",
           text: "牛方研究员辩论",
-          analyst: "bullResearcher",
+          ability: "bullResearcher",
           inputs: [
             "market_report",
             "sentiment_report",
@@ -170,7 +171,7 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
         {
           id: "bear_researcher",
           text: "熊方研究员辩论",
-          analyst: "bearResearcher",
+          ability: "bearResearcher",
           inputs: [
             "market_report",
             "sentiment_report",
@@ -183,13 +184,13 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
         },
       ],
     },
-    // {
-    //   id: "manage_research",
-    //   text: "研究经理裁决与投资计划",
-    //   analyst: "researchManager",
-    //   inputs: ["investment_debate_state"],
-    //   outputs: ["investment_plan", "investment_debate_state"],
-    // },
+    {
+      id: "manage_research",
+      text: "研究经理裁决与投资计划",
+      ability: "researchManager",
+      inputs: ["investment_debate_state"],
+      outputs: ["investment_plan", "investment_debate_state"],
+    },
   ];
 
   // 实例使用静态配置
@@ -214,6 +215,8 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
     // 注册辩论型研究员能力，使用键与配置中的 analyst 对齐，便于通用调用
     this.registerAbility("bullResearcher", researchBull);
     this.registerAbility("bearResearcher", researchBear);
+    // 注册研究经理能力（用于裁决并生成投资计划）
+    this.registerAbility("researchManager", manageResearch);
   }
 
   /**
@@ -334,7 +337,8 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
       await this.logger.info("TradeAgent", "辩论步骤输入", {
         stepId,
         text: `${member.text}（第${round}轮）`,
-        analyst: member.analyst,
+        // 同时输出 ability 与兼容字段 analyst
+        ability: (member as { ability?: string }).ability,
         inputs: inputKeys,
         state: dynamicState,
         model: {
@@ -345,9 +349,10 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
       });
 
       // 能力调用（宽泛签名）
-      const abilityUnknown = this.getAbility(member.analyst) as unknown;
+      const abilityKey = member.ability;
+      const abilityUnknown = this.getAbility(abilityKey) as unknown;
       if (typeof abilityUnknown !== "function") {
-        throw new Error(`能力 '${member.analyst}' 未注册.`);
+        throw new Error(`能力 '${abilityKey}' 未注册.`);
       }
       type GenericDebateAbility = (props: {
         state: Record<string, unknown>;
@@ -365,7 +370,8 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
       // 原始输出日志
       await this.logger.info("TradeAgent", "辩论步骤原始输出", {
         stepId,
-        analyst: member.analyst,
+        ability: abilityKey,
+        analyst: abilityKey,
         rawResult,
       });
 
@@ -436,8 +442,9 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
         id: cfg.id,
         text: cfg.text,
         run: async (state) => {
-          const analyst = this.getAbility<CommonAbility>(cfg.analyst);
-          if (!analyst) throw new Error(`能力 '${cfg.analyst}' 未注册.`);
+          const abilityKey = cfg.ability;
+          const analyst = this.getAbility<CommonAbility>(abilityKey);
+          if (!analyst) throw new Error(`能力 '${abilityKey}' 未注册.`);
           // 根据配置 inputs 动态构造入参
           const inputKeys = cfg.inputs || [];
           const dynamicState = this.buildDynamicState(inputKeys, state);
@@ -445,15 +452,17 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
           await this.logger.info("TradeAgent", "普通步骤输入", {
             stepId: cfg.id,
             text: cfg.text,
-            analyst: cfg.analyst,
+            ability: abilityKey,
+            analyst: abilityKey,
             inputs: inputKeys,
             state: dynamicState,
           });
-          const res = await analyst(dynamicState);
+          const res = await analyst({ ...dynamicState, modelConfig });
           // 文件日志：记录普通步骤输出
           await this.logger.info("TradeAgent", "普通步骤输出", {
             stepId: cfg.id,
-            analyst: cfg.analyst,
+            ability: abilityKey,
+            analyst: abilityKey,
             rawResult: res,
           });
           return res as Partial<AgentState>;
