@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import classnames from "classnames/bind"; // 引入绑定工具，统一组件根级样式
+import styles from "./StockInputForm.module.scss"; // 组件级样式模块，仅承载根容器间距
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2, Rocket } from "lucide-react";
@@ -8,6 +10,8 @@ import { StockInputFormProps } from "@/types";
  * 股票输入表单组件
  * 用于输入股票代码并提交分析请求
  */
+const cn = classnames.bind(styles);
+
 const StockInputForm: React.FC<StockInputFormProps> = ({
   onSubmit,
 }) => {
@@ -23,7 +27,8 @@ const StockInputForm: React.FC<StockInputFormProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    // 组件根容器的间距改由 SCSS Module 管理
+    <form onSubmit={handleSubmit} className={cn("root")}>
       <Input
         type="text"
         placeholder="例如: AAPL, 00700.HK, 600519.SS"

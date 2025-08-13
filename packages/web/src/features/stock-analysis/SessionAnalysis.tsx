@@ -11,10 +11,14 @@ import {
 import ProgressTracker from "@/components/ProgressTracker";
 import { useStockAnalysis } from "@/hooks/useStockAnalysis";
 import { usePathname } from "next/navigation";
+import classnames from "classnames/bind"; // 引入绑定工具，统一根容器样式
+import styles from "./index.module.scss"; // features 局部样式模块（卡片宽度等）
 
 interface SessionAnalysisProps {
   analysisId?: string;
 }
+
+const cn = classnames.bind(styles);
 
 const SessionAnalysis: React.FC<SessionAnalysisProps> = ({ analysisId }) => {
   const pathname = usePathname();
@@ -41,7 +45,7 @@ const SessionAnalysis: React.FC<SessionAnalysisProps> = ({ analysisId }) => {
 
   return (
     // 页面级布局已由路由页管理，这里仅渲染卡片内容
-    <Card className="w-full max-w-6xl xl:max-w-7xl border-border/60 shadow-lg supports-[backdrop-filter]:bg-card/80 backdrop-blur">{/* 进一步放大卡片：与启动页一致 */}
+    <Card className={cn("card", "border-border/60 shadow-lg supports-[backdrop-filter]:bg-card/80 backdrop-blur")}>{/* 进一步放大卡片：与启动页一致 */}
       <CardHeader>
         <CardTitle className="text-center text-2xl md:text-3xl font-semibold tracking-tight">
           智能分析 Agent

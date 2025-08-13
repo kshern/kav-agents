@@ -1,4 +1,6 @@
 import React, { useMemo } from "react";
+import classnames from "classnames/bind"; // 引入绑定工具，统一根容器样式
+import styles from "./index.module.scss"; // 组件级样式模块：根容器与步骤容器间距
 import { Progress } from "@/components/ui/progress";
 import { ProgressTrackerProps } from "@/types";
 import StepItem from "./StepItem";
@@ -9,6 +11,8 @@ import { FileText } from "lucide-react";
  * 进度跟踪器组件
  * 显示整体分析进度和各步骤状态
  */
+const cn = classnames.bind(styles);
+
 const ProgressTracker: React.FC<ProgressTrackerProps> = ({ steps, overallProgress }) => {
   const isDebate = (id: string) => /_r\d+$/i.test(id);
 
@@ -55,7 +59,8 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({ steps, overallProgres
   const showViewReport = useMemo(() => Math.round(overallProgress) >= 100, [overallProgress]);
 
   return (
-    <div className="space-y-6">
+    // 根容器的竖向间距交给 SCSS Module
+    <div className={cn("root")}>
       {/* 进度条 */}
       <div>
         <div className="flex justify-between mb-2">
@@ -70,7 +75,7 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({ steps, overallProgres
       </div>
 
       {/* 步骤列表 */}
-      <div className="space-y-2">
+      <div className={cn("steps")}>
         {/* 辩论前的非辩论步骤 */}
         {beforeDebate.map((step, index) => (
           <StepItem

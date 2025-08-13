@@ -3,11 +3,15 @@
 import React from "react";
 import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import classnames from "classnames/bind"; // 引入绑定工具
+import styles from "./ThemeToggle.module.scss"; // 组件级样式模块
 
 /**
  * 主题切换组件
  * 切换 html 上的 dark 类，并将用户选择持久化到 localStorage
  */
+const cn = classnames.bind(styles);
+
 const ThemeToggle: React.FC = () => {
   // 读取当前主题：优先 localStorage，其次系统偏好
   const getInitial = React.useCallback((): "light" | "dark" => {
@@ -43,7 +47,7 @@ const ThemeToggle: React.FC = () => {
       size="icon"
       aria-label={theme === "dark" ? "切换为亮色" : "切换为暗色"}
       onClick={toggle}
-      className="border-border/70"
+      className={cn("toggleBtn")}
       title={theme === "dark" ? "切换为亮色" : "切换为暗色"}
     >
       {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}

@@ -1,4 +1,6 @@
 import React from "react";
+import classnames from "classnames/bind"; // 引入绑定工具，统一组件根级样式
+import styles from "./AnalysisReport.module.scss"; // 组件级样式模块，仅承载根容器间距等
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { AnalysisReportProps } from "@/types";
@@ -7,11 +9,14 @@ import { AnalysisReportProps } from "@/types";
  * 分析报告组件
  * 显示股票分析的最终结果报告
  */
+const cn = classnames.bind(styles);
+
 const AnalysisReport: React.FC<AnalysisReportProps> = ({
   onReset,
 }) => {
   return (
-    <div className="space-y-6">
+    // 组件根容器的间距改由 SCSS Module 管理
+    <div className={cn("root")}>
       {/* 报告标题 */}
       <div className="text-center">
         <h2 className="text-2xl md:text-3xl font-semibold tracking-tight text-foreground">

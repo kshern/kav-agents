@@ -1,6 +1,8 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import classnames from "classnames/bind"; // 引入绑定工具，统一根容器样式
+import styles from "./AuthStatus.module.scss"; // 组件级样式模块
 
 interface PublicUser {
   id: string;
@@ -10,6 +12,7 @@ interface PublicUser {
 
 // 全局登录状态组件：显示用户信息与登录/注册/退出操作
 export default function AuthStatus() {
+  const cn = classnames.bind(styles);
   const [user, setUser] = useState<PublicUser | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   // 监听路由变化以刷新登录状态（布局持久化时组件不会卸载）
@@ -46,11 +49,12 @@ export default function AuthStatus() {
     } catch {}
   };
 
-  if (loading) return <div className="text-sm text-gray-600">加载中...</div>;
+  if (loading) return <div className="text-sm text-muted-foreground">加载中...</div>;
 
   if (!user)
     return (
-      <div className="flex items-center gap-3 text-sm">
+      // 根容器布局交给 SCSS Module
+      <div className={cn("root")}>
         <a href="/login" className="underline">
           登录
         </a>
@@ -61,8 +65,9 @@ export default function AuthStatus() {
     );
 
   return (
-    <div className="flex items-center gap-3 text-sm">
-      <span className="text-gray-700">你好，{user.name || user.email}</span>
+    // 根容器布局交给 SCSS Module
+    <div className={cn("root")}> 
+      <span className="text-foreground">你好，{user.name || user.email}</span>
       <button onClick={logout} className="underline">
         退出
       </button>

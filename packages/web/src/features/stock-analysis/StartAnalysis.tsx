@@ -10,6 +10,10 @@ import {
 } from "@/components/ui/card";
 import StockInputForm from "@/components/StockInputForm";
 import { useRouter } from "next/navigation";
+import classnames from "classnames/bind"; // 引入绑定工具，统一根容器样式
+import styles from "./index.module.scss"; // features 局部样式模块（卡片宽度等）
+
+const cn = classnames.bind(styles);
 
 const StartAnalysis: React.FC = () => {
   const router = useRouter();
@@ -35,7 +39,7 @@ const StartAnalysis: React.FC = () => {
 
   return (
     // 页面级布局已由路由页 `src/app/stock-analysis/page.tsx` 管理，这里仅渲染卡片内容
-    <Card className="w-full max-w-6xl xl:max-w-7xl border-border/60 shadow-lg supports-[backdrop-filter]:bg-card/80 backdrop-blur">{/* 进一步放大卡片：接近主容器宽度 */}
+    <Card className={cn("card", "border-border/60 shadow-lg supports-[backdrop-filter]:bg-card/80 backdrop-blur")}>{/* 进一步放大卡片：接近主容器宽度 */}
       <CardHeader>
         <CardTitle className="text-center text-2xl md:text-3xl font-semibold tracking-tight">
           智能分析 Agent
