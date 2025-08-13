@@ -8,6 +8,7 @@ import type {
   InvestDebateState,
   RiskDebateState,
 } from "./agentStates";
+import type { MemoryConfig } from "./analysis"; // 引入记忆策略类型，便于在能力签名中透传
 export type {
   AgentState,
   InvestDebateState,
@@ -194,6 +195,8 @@ export type DebateResearcherAbility = (props: {
     news_report: string;
     fundamentals_report: string;
     investment_debate_state: InvestDebateState;
+    /** 可选：配置驱动的记忆策略（由编排层 TradeAgent 透传） */
+    memory_config?: MemoryConfig;
   };
   modelConfig: Model;
 }) => Promise<{ investment_debate_state: InvestDebateState }>;

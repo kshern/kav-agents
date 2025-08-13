@@ -12,6 +12,7 @@ import type {
   PipelineItemConfig,
   DebateGroupConfig,
   DebateMemberConfig,
+  MemoryConfig, // 引入记忆策略配置类型（配置驱动）
 } from "../types";
 import { researchBull } from "../abilities/researchers/BullResearcher";
 import { researchBear } from "../abilities/researchers/BearResearcher";
@@ -26,6 +27,10 @@ export interface TradeAgentInput {
   symbol: string; // 股票代码
   debate_rounds?: number; // 辩论轮次（可选，用于覆盖配置中的默认轮次）
   debate_rounds_by_group?: Record<string, number>; // 按分组覆盖辩论轮次，例如 { main_debate: 2, risk_debate: 1 }
+  /**
+   * 可选：运行时覆盖记忆策略（最高优先级），将应用于所有辩论成员
+   */
+  memory_override?: MemoryConfig;
 }
 
 /**
@@ -37,13 +42,88 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
   // 文件日志，记录每一步输入输出，便于离线分析
   private logger = new FileLogger("logs/trade-agent.log");
 
+  /**
+   * 全局默认记忆策略（当未在运行时/成员/分组指定时生效）
+   * 对齐 Python：默认采用情境检索 topK=2
+   */
+  private readonly defaultMemory: MemoryConfig = { strategy: "situation", topK: 2 };
+
   // 类型守卫：判断流水线条目是否为辩论分组（避免使用 any）
   private static isDebateGroupConfig(
     item: PipelineItemConfig
   ): item is DebateGroupConfig {
     return (item as { type?: string }).type === "debate";
   }
+  // public static readonly ANALYSIS_STEPS: PipelineItemConfig[] = [
+  //   // 普通步骤：基本面
+  //   {
+  //     id: "analyze_fundamentals",
+  //     text: "分析公司基本面",
+  //     analyst: "fundamentalsAnalyst",
+  //     inputs: ["company_of_interest", "trade_date"], // 从全局状态读取
+  //     outputs: ["fundamentals_report"],              // 写回全局状态
+  //     // 普通步骤通常不需要记忆，预留 memory 仅做扩展使用
+  //     // memory: { strategy: "situation", topK: 2 },
+  //   },
+  //   // 普通步骤：市场
+  //   {
+  //     id: "analyze_market",
+  //     text: "分析市场环境",
+  //     analyst: "marketAnalyst",
+  //     inputs: ["company_of_interest", "trade_date"],
+  //     outputs: ["market_report"],
+  //   },
+  //   // 普通步骤：新闻
+  //   {
+  //     id: "analyze_news",
+  //     text: "分析新闻",
+  //     analyst: "newsAnalyst",
+  //     inputs: ["company_of_interest", "trade_date"],
+  //     outputs: ["news_report"],
+  //   },
 
+  //   // 辩论分组：主辩论（牛/熊）
+  //   {
+  //     type: "debate",
+  //     group: "main_debate",
+  //     rounds: 2, // 分组默认轮次（可被运行时/按组覆盖）
+  //     // 分组级记忆配置：默认情境检索，抓取 3 条相似记忆
+  //     memory: { strategy: "situation", topK: 3 },
+  //     members: [
+  //       {
+  //         id: "bull_researcher",
+  //         text: "牛方研究员辩论",
+  //         analyst: "bullResearcher",
+  //         inputs: [
+  //           "market_report",
+  //           "sentiment_report",
+  //           "news_report",
+  //           "fundamentals_report",
+  //           "investment_debate_state",
+  //         ],
+  //         outputs: ["investment_debate_state"],
+  //         order: 1,
+  //         // 成员级覆盖：牛方改为历史摘要（覆盖分组 memory）
+  //         memory: { strategy: "history" },
+  //       },
+  //       {
+  //         id: "bear_researcher",
+  //         text: "熊方研究员辩论",
+  //         analyst: "bearResearcher",
+  //         inputs: [
+  //           "market_report",
+  //           "sentiment_report",
+  //           "news_report",
+  //           "fundamentals_report",
+  //           "investment_debate_state",
+  //         ],
+  //         outputs: ["investment_debate_state"],
+  //         order: 2,
+  //         // 不设置成员 memory => 继承分组 memory：situation/topK=3
+  //       },
+  //     ],
+  //   }
+  // ];
   // 定义分析步骤（静态配置，作为唯一数据源）
   // 采用联合类型：普通步骤（AnalysisStepConfig）或辩论分组（type: 'debate'）
   public static readonly ANALYSIS_STEPS: PipelineItemConfig[] = [
@@ -236,12 +316,21 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
     groupKey: string,
     member: DebateMemberConfig,
     round: number,
-    modelConfig: Model
+    modelConfig: Model,
+    groupMemory?: MemoryConfig, // 分组级记忆配置（可为空）
+    runtimeMemoryOverride?: MemoryConfig // 运行时覆盖（最高优先级）
   ): (state: AgentState) => Promise<Partial<AgentState>> {
     return async (state: AgentState): Promise<Partial<AgentState>> => {
       const inputKeys = member.inputs ?? [];
       const stepId = `${groupKey}__${member.id}_r${round}`;
       const dynamicState = this.buildDynamicState(inputKeys, state);
+
+      // 计算有效记忆配置（优先级：运行时 > 成员 > 分组 > 全局默认）
+      const effectiveMemory: MemoryConfig =
+        runtimeMemoryOverride ??
+        member.memory ??
+        groupMemory ??
+        this.defaultMemory;
 
       // 输入日志
       await this.logger.info("TradeAgent", "辩论步骤输入", {
@@ -254,6 +343,7 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
           provider: modelConfig.provider,
           model_name: modelConfig.model_name,
         },
+        memory_config: effectiveMemory, // 记录选用的记忆策略，便于排查
       });
 
       // 能力调用（宽泛签名）
@@ -268,7 +358,8 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
       const ability = abilityUnknown as GenericDebateAbility;
 
       const rawResultUnknown = await ability({
-        state: dynamicState,
+        // 将有效记忆配置透传给研究员（不破坏既有 state 结构）
+        state: { ...dynamicState, memory_config: effectiveMemory },
         modelConfig,
       });
       const rawResult = rawResultUnknown as Record<string, unknown>;
@@ -301,7 +392,8 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
   private buildStepsFromConfig(
     debateRoundsByGroupOverride: Record<string, number> | undefined, // 按分组覆盖的轮次
     debateRoundsOverride: number | undefined, // 全局覆盖轮次
-    modelConfig: Model
+    modelConfig: Model,
+    runtimeMemoryOverride?: MemoryConfig // 运行时记忆策略覆盖
   ): Array<StatefulStep<AgentState>> {
     const steps: Array<StatefulStep<AgentState>> = [];
 
@@ -324,7 +416,15 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
             steps.push({
               id: `${groupKey}__${m.id}_r${i}`,
               text: `${m.text}（第${i}轮）`,
-              run: this.createDebateRunFn(groupKey, m, i, modelConfig),
+              // 透传分组级记忆配置与运行时覆盖（成员级在 createDebateRunFn 内覆盖）
+              run: this.createDebateRunFn(
+                groupKey,
+                m,
+                i,
+                modelConfig,
+                groupItem.memory,
+                runtimeMemoryOverride
+              ),
             });
           }
         }
@@ -428,7 +528,8 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
     const steps = this.buildStepsFromConfig(
       debateRoundsByGroupOverride,
       debateRoundsOverride,
-      modelConfig
+      modelConfig,
+      input.memory_override
     );
 
     try {

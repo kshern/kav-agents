@@ -7,8 +7,8 @@ import { generateContent } from "../../../models/gateway";
 import { parseAndRenderTemplate } from "../../../utils"; // 统一模板渲染工具
 import { loadTemplate } from "../../../utils/templateLoader"; // 动态加载模板，兼容 Vite/Node 环境
 import { InvestDebateState } from "../../../types/agentStates";
-import { Model } from "../../../types";
-import { buildPastMemories } from "../../../adapters/memory";
+import { Model, MemoryConfig } from "../../../types";
+import { buildPastMemories } from "../../../adapters/memory"; // 通过适配层收口，支持情境检索
 
 /**
  * @description 熊方研究员 Agent，负责提出看跌论点并更新辩论状态。
@@ -23,6 +23,8 @@ export async function researchBear(props: {
     news_report: string;
     fundamentals_report: string;
     investment_debate_state: InvestDebateState;
+    // 可选：记忆策略配置（由 TradeAgent 透传，用于配置驱动）
+    memory_config?: MemoryConfig;
   };
   modelConfig: Model;
 }): Promise<{ investment_debate_state: InvestDebateState }> {
@@ -40,10 +42,34 @@ export async function researchBear(props: {
   const history = investment_debate_state.history || [];
   const current_response = investment_debate_state.current_response || "";
 
-  // 业务侧定义 memoryKey，需与模板占位符一致
-  const memoryKey = "bear_past_memories";
-  // 基于辩论历史构造过去记忆字符串（直接通过适配层）
-  const past_memory_str = await buildPastMemories(history || [], memoryKey);
+  // 读取配置驱动的记忆策略（优先使用透传配置，否则采用默认：situation/topK=2）
+  const effectiveMemory: MemoryConfig =
+    props.state.memory_config ?? { strategy: "situation", topK: 2 };
+
+  let past_memory_str = "";
+  if (effectiveMemory.strategy === "situation") {
+    // 基于“当前情境（四报告拼接）+ topK”检索过去记忆（通过适配层收口），以对齐 Python 版本
+    // 1）构造情境字符串（避免空值，引入最关键的四类报告）
+    const situation = [
+      market_report,
+      sentiment_report,
+      news_report,
+      fundamentals_report,
+    ]
+      .filter((s) => !!s && s.length > 0)
+      .join("\n");
+    // 2）通过适配层构建过去记忆字符串（strategy: 'situation'）
+    past_memory_str = await buildPastMemories(history || [], "bear_past_memories", {
+      strategy: "situation",
+      situation,
+      topK: effectiveMemory.topK ?? 2,
+    });
+  } else {
+    // 使用“历史摘要”策略（BufferMemory），保持兼容
+    past_memory_str = await buildPastMemories(history || [], "bear_past_memories", {
+      strategy: "history",
+    });
+  }
 
   // 将历史记录格式化为字符串
   const history_str = history

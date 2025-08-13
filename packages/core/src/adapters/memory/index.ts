@@ -7,6 +7,7 @@
 
 import { BufferMemory, ChatMessageHistory } from "langchain/memory";
 import { HumanMessage, AIMessage } from "@langchain/core/messages";
+import { Memory } from "../../memory"; // 引入业务侧记忆模块，用于情境相似检索
 
 /**
  * 历史消息输入类型（避免在适配层中依赖业务的 DebateMessage 类型）
@@ -19,6 +20,20 @@ export type HistoryMessageInput = {
 };
 
 /**
+ * 可选参数：支持两种构建策略
+ * - history：沿用原有 BufferMemory（基于对话历史的摘要）
+ * - situation：基于“当前情境字符串”的相似检索，topK 默认为 2
+ */
+export interface BuildPastMemoriesOptions {
+  /** 构建策略，默认使用 history（保持向后兼容） */
+  strategy?: "history" | "situation";
+  /** 当 strategy 为 situation 时必需：四类报告拼接后的情境字符串 */
+  situation?: string;
+  /** 相似检索的条数，默认 2 */
+  topK?: number;
+}
+
+/**
  * 适配层暴露的能力：根据输入消息构造统一的“过去记忆”字符串
  *
  * @param history - 辩论历史消息输入数组
@@ -27,28 +42,43 @@ export type HistoryMessageInput = {
  */
 export async function buildPastMemories(
   history: HistoryMessageInput[],
-  memoryKey: string
+  memoryKey: string,
+  options?: BuildPastMemoriesOptions,
 ): Promise<string> {
+  const strategy = options?.strategy ?? "history";
+
+  // 分支一：基于“情境”的相似检索（对齐 Python 行为：四报告情境 + topK=2）
+  if (strategy === "situation") {
+    const situation = (options?.situation || "").trim();
+    const topK = options?.topK ?? 2;
+    if (!situation) {
+      // 若未提供情境，回退到 history 策略，避免返回空
+      // （也可选择直接返回空字符串）
+    } else {
+      const mem = new Memory();
+      const recs = await mem.get_memories(situation, topK);
+      const past = (recs || [])
+        .map((r, idx) => `(${idx + 1}) ${r.recommendation}`)
+        .join("\n");
+      return past;
+    }
+  }
+
+  // 分支二：基于对话历史的 BufferMemory（保持与原实现一致）
   // 将通用消息输入转换为 LangChain 所需的消息对象
   const lcMessages = (history || []).map((m) => {
     return m.role === "human"
       ? new HumanMessage(m.content)
       : new AIMessage(m.content);
   });
-  // 构建 LangChain 的消息历史
   const lcHistory = new ChatMessageHistory(lcMessages);
 
-  // 使用 BufferMemory 生成过去记忆字符串
   const memory = new BufferMemory({
     chatHistory: lcHistory,
-    memoryKey, // 不在适配层硬编码，由业务传入以与模板占位符保持一致
-    returnMessages: false, // 返回字符串而不是消息对象数组
+    memoryKey,
+    returnMessages: false,
   });
-
   const memoryVariables = await memory.loadMemoryVariables({});
-  // 这里按约定读取同名的 key
   const past = memoryVariables[memoryKey as keyof typeof memoryVariables];
-
-  // 类型保护：确保返回字符串
   return typeof past === "string" ? past : String(past ?? "");
 }

@@ -3,6 +3,18 @@
  * 供 core 与 web 端通过 type-only 方式共享，避免重复定义
  */
 
+/**
+ * 记忆策略配置（配置驱动）
+ * - strategy: 'history' 使用对话历史的 BufferMemory 摘要
+ * - strategy: 'situation' 使用四报告拼接成情境做相似检索
+ */
+export interface MemoryConfig {
+  /** 策略选择（默认为 'situation'，对齐 Python 实现） */
+  strategy: "history" | "situation";
+  /** 当使用情境检索时的相似条数（默认 2） */
+  topK?: number;
+}
+
 export interface AnalysisStepConfig {
   id: string;
   text: string;
@@ -31,6 +43,11 @@ export interface AnalysisStepConfig {
    * 编排器会在首次展开该分组时读取到的第一个值作为该分组的默认轮次。
    */
   debate_rounds?: number;
+  /**
+   * 可选：步骤级记忆策略配置（通常用于普通步骤，如需使用记忆）
+   * 说明：辩论成员/分组建议在各自配置上使用 memory 字段，这里仅作为补充与向后兼容
+   */
+  memory?: MemoryConfig;
 }
 
 /**
@@ -43,6 +60,10 @@ export interface DebateMemberConfig {
   inputs?: string[]; // 输入状态键
   outputs?: string[]; // 输出状态键
   order?: number; // 组内顺序，1 开始（省略则默认按出现顺序）
+  /**
+   * 可选：成员级记忆策略配置（优先级高于分组级的 memory 配置）
+   */
+  memory?: MemoryConfig;
 }
 
 /**
@@ -54,6 +75,10 @@ export interface DebateGroupConfig {
   group: string; // 分组键，如 "main_debate"
   rounds?: number; // 该分组的默认轮次（可选）
   members: DebateMemberConfig[]; // 分组成员
+  /**
+   * 可选：分组级记忆策略配置（被成员级 memory 覆盖时失效）
+   */
+  memory?: MemoryConfig;
 }
 
 /**
