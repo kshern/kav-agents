@@ -13,13 +13,11 @@ export interface StoredLine<T = unknown> {
 
 export async function appendEvent<T = unknown>(
   analysisId: string,
-  symbol: string,
   type: AnalysisEventType,
   event?: T,
   ts: string = new Date().toISOString(),
-  // 新增：Supabase 客户端与用户 ID，用于将“完成态”事件写入云端
+  // 依赖 RLS，不再需要 userId
   supabase?: SupabaseClient,
-  userId?: string,
 ) {
   // 仅记录日志，便于本地开发排查。生产仅依赖 Supabase 存储“完成态/错误态”。
   // eslint-disable-next-line no-console
@@ -30,7 +28,7 @@ export async function appendEvent<T = unknown>(
   // - 当 type === 'final' 时视为 status='completed'
   // - 当 type === 'progress' 且 (event as any)?.status === 'completed' 时视为完成
   // - 当 type === 'error' 时视为 status='error'
-  if (!supabase || !userId) return; // 未提供 Supabase，会仅做本地日志
+  if (!supabase) return; // 未提供 Supabase，会仅做本地日志
 
   try {
     if (type === "final" || type === "progress" || type === "error") {
@@ -51,8 +49,7 @@ export async function appendEvent<T = unknown>(
 
       const row = {
         analysis_id: analysisId,
-        user_id: userId,
-        symbol,
+        // user_id 和 symbol 已从表中移除
         step_id: e?.stepId ?? (type === "final" ? "final" : type),
         step_text: e?.stepText ?? (type === "final" ? "分析完成" : undefined),
         group_key: null as unknown as string | null, // 预留：当前事件模型未提供
@@ -85,10 +82,10 @@ export async function appendEvent<T = unknown>(
         const { error: insertErr } = await supabase.from("analysis_events").insert(row).select("id").maybeSingle();
         if (insertErr) throw insertErr;
       } else {
-        // 完成态使用 upsert，按 (user_id, analysis_id, step_id, round_no, member_id) 冲突覆盖
+        // 完成态使用 upsert，按 (analysis_id, step_id, round_no, member_id) 冲突覆盖
         const { error: upsertErr } = await supabase
           .from("analysis_events")
-          .upsert(row, { onConflict: "user_id,analysis_id,step_id,round_no,member_id" })
+          .upsert(row, { onConflict: "analysis_id,step_id,round_no,member_id" })
           .select("id")
           .maybeSingle();
         if (upsertErr) throw upsertErr;
@@ -106,20 +103,30 @@ export async function appendEvent<T = unknown>(
 export async function readEvents<T = unknown>(
   analysisId: string,
   supabase: SupabaseClient,
-  userId: string,
 ): Promise<StoredLine<T>[]> {
   // 先读 Supabase 的完成事件；若失败或为空，可回退本地日志（可选）
   const out: StoredLine<T>[] = [];
   try {
+    // RLS 策略已确保只能访问自己的数据，不再需要 user_id 查询条件
+    // 1. 先获取会话信息，拿到 symbol
+    const { data: sessionData, error: sessionError } = await supabase
+      .from("analysis_sessions")
+      .select("symbol")
+      .eq("analysis_id", analysisId)
+      .single();
+    if (sessionError) throw sessionError;
+    const symbol = sessionData.symbol;
+
+    // 2. 读取所有事件
     const { data, error } = await supabase
       .from("analysis_events")
       .select(
-        "analysis_id, symbol, ts, event_type, status, step_id, step_text, progress, result_json, result_md, error",
+        "analysis_id, ts, event_type, status, step_id, step_text, progress, result_json, result_md, error",
       )
-      .eq("user_id", userId)
       .eq("analysis_id", analysisId)
       .order("ts", { ascending: true });
     if (error) throw error;
+
     if (data) {
       for (const r of data) {
         const payload: { type: AnalysisEventType; event: { stepId: string; stepText?: string; status: "completed" | "error"; progress: number; result?: unknown; error?: unknown } } = {
@@ -136,7 +143,7 @@ export async function readEvents<T = unknown>(
         if (r.error) payload.event.error = r.error as unknown;
         out.push({
           analysisId: r.analysis_id,
-          symbol: r.symbol,
+          symbol: symbol, // 从会话信息中获取
           ts: new Date(r.ts).toISOString(),
           payload,
         } as StoredLine<T>);
