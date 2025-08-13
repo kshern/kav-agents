@@ -1,6 +1,10 @@
 "use client";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+// 页面布局切换为 module.scss + classnames/bind
+import classnames from 'classnames/bind';
+import styles from './index.module.scss';
+const cn = classnames.bind(styles);
 
 // 注册页面（客户端组件）
 export default function RegisterPage() {
@@ -44,7 +48,8 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="mx-auto max-w-md p-6">
+    // 页面级容器使用 SCSS 模块管理，保持内部表单的 Tailwind 不变
+    <div className={cn('container')}>
       <h1 className="text-2xl font-semibold mb-4">注册</h1>
       {error && <p className="text-red-600 mb-3">{error}</p>}
       {info && <p className="text-green-600 mb-3">{info}</p>}

@@ -1,12 +1,17 @@
  import { Button } from "@/components/ui/button";
  import React from "react";
  import Link from "next/link";
+ // 页面布局采用 module.scss + classnames/bind
+ import classnames from 'classnames/bind';
+ import styles from './index.module.scss';
+ const cn = classnames.bind(styles);
 
 // 主页面组件
 export default function HomePage() {
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-slate-50 flex items-center justify-center px-6">
+    // 使用 SCSS 管理页面布局（背景与居中），组件内部保持 Tailwind
+    <div className={cn('homeWrapper')}>{/* 填满 main 的剩余高度，确保首页保持一屏 */}
       <div className="text-center space-y-6">
         <div>
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">

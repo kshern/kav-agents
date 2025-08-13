@@ -1,6 +1,10 @@
 "use client";
 import React, { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+// 页面布局切换为 module.scss + classnames/bind
+import classnames from 'classnames/bind';
+import styles from './index.module.scss';
+const cn = classnames.bind(styles);
 
 // 登录页面（客户端组件）
 export default function LoginPage() {
@@ -40,7 +44,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="mx-auto max-w-md p-6">
+    // 页面级容器使用 SCSS 模块管理，保持内部表单的 Tailwind 不变
+    <div className={cn('container')}>
       <h1 className="text-2xl font-semibold mb-4">登录</h1>
       {error && <p className="text-red-600 mb-3">{error}</p>}
       <form onSubmit={handleSubmit} className="space-y-4">
