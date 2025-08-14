@@ -9,6 +9,10 @@ import { loadTemplate } from "../../../utils/templateLoader"; // 动态加载模
 import { InvestDebateState } from "../../../types/agentStates";
 import { Model, MemoryConfig } from "../../../types";
 import { buildPastMemories } from "../../../adapters/memory"; // 通过适配层收口，支持情境检索
+import { FileLogger } from "../../../utils/logger"; // 文件日志
+
+// 研究员日志器：输出至运行时 CWD 的 logs/researcher.log（Next dev 下即 packages/web/logs）
+const researcherLogger = new FileLogger("logs/researcher.log");
 
 /**
  * @description 牛方研究员 Agent，负责提出看涨论点并更新辩论状态。
@@ -91,11 +95,28 @@ export async function researchBull(props: {
     past_memories: past_memory_str,
   });
 
+  // 日志：记录提示词与记忆摘要信息（仅记录长度与前 200 字，避免日志过大）
+  await researcherLogger.info("BullResearcher", "提示词构建完成", {
+    history_length: history_str.length,
+    history_preview: history_str.slice(0, 200),
+    last_opponent_length: current_response.length,
+    past_memories_length: past_memory_str.length,
+    past_memories_preview: past_memory_str.slice(0, 200),
+    prompt_length: prompt.length,
+    prompt_preview: prompt.slice(0, 200),
+  });
+
   try {
     // 调用 LLM 生成论点
     const response = await generateContent({
       modelConfig,
       prompt,
+    });
+
+    // 日志：记录 LLM 输出（仅长度与前 200 字）
+    await researcherLogger.info("BullResearcher", "LLM 输出", {
+      response_length: (response ?? "").length,
+      response_preview: String(response ?? "").slice(0, 200),
     });
 
     const argument = `Bull Analyst: ${response}`;
@@ -110,6 +131,14 @@ export async function researchBull(props: {
       current_response: argument,
       count: (investment_debate_state.count || 0) + 1,
     };
+
+    // 日志：记录结果补丁关键信息（计数与当前响应预览）
+    await researcherLogger.info("BullResearcher", "结果补丁", {
+      count_before: investment_debate_state.count || 0,
+      count_after: new_investment_debate_state.count || 0,
+      current_response_length: argument.length,
+      current_response_preview: argument.slice(0, 200),
+    });
 
     return { investment_debate_state: new_investment_debate_state };
   } catch (error) {

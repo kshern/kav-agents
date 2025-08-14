@@ -24,7 +24,8 @@ const StepItem: React.FC<StepItemProps> = ({ step, status, isLast }) => {
             "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ring-1",
             status === "pending" && "bg-muted text-muted-foreground ring-border",
             status === "in-progress" && "bg-primary text-primary-foreground ring-primary/40 animate-glow",
-            status === "completed" && "bg-emerald-500 text-white ring-emerald-400",
+            // A股语义：避免使用绿色表示完成，改用红色以免误解“绿=跌”
+            status === "completed" && "bg-rose-500 text-white ring-rose-400",
             "group-hover:scale-[1.03]",
           )}
           title={step.text}
@@ -42,7 +43,8 @@ const StepItem: React.FC<StepItemProps> = ({ step, status, isLast }) => {
           <div
             className={cn(
               "line h-full w-0.5 mt-1 transition-colors duration-300",
-              status === "completed" ? "bg-emerald-500" : status === "in-progress" ? "bg-primary/60" : "bg-muted",
+              // 完成态连线用红色，避免绿色
+              status === "completed" ? "bg-rose-500" : status === "in-progress" ? "bg-primary/60" : "bg-muted",
             )}
           ></div>
         )}

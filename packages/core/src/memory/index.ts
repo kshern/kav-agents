@@ -12,6 +12,10 @@ interface MemoryRecord {
 
 // 引入适配层以复用统一的记忆构建逻辑（收口到 adapters/memory）
 import { buildPastMemories } from "../adapters/memory";
+import { FileLogger } from "../utils/logger"; // 文件日志
+
+// 内存模块日志器：输出至运行时 CWD 的 logs/memory.log（Next dev 下即 packages/web/logs）
+const memoryLogger = new FileLogger("logs/memory.log");
 
 /**
  * Memory 类负责管理和检索智能体的长期记忆。
@@ -22,7 +26,10 @@ export class Memory {
   constructor() {
     // 在实际应用中，这里可能会从数据库或文件中加载记录
     this.records = [];
-    console.log("Memory module initialized.");
+    // 文件日志：初始化
+    void memoryLogger.info("Memory", "模块初始化", {
+      records_count: this.records.length,
+    });
   }
 
   /**
@@ -37,14 +44,31 @@ export class Memory {
     _current_situation: string,
     n_matches: number,
   ): Promise<{ recommendation: string }[]> {
-    console.log(`Retrieving ${n_matches} memories...`);
+    // 文件日志：输入
+    await memoryLogger.info("Memory", "get_memories 输入", {
+      situation_length: _current_situation.length,
+      situation_preview: _current_situation.slice(0, 200),
+      n_matches,
+    });
+
     // TODO: 实现基于向量相似度的真实记忆检索逻辑
     // 目前返回模拟数据以供测试
-    return Promise.resolve(
-      Array.from({ length: n_matches }, (_, i) => ({
+    const results: { recommendation: string }[] = Array.from(
+      { length: n_matches },
+      (_, i) => ({
         recommendation: `这是第 ${i + 1} 条来自过去相似情况的模拟经验教训。`,
-      })),
+      }),
     );
+
+    // 文件日志：输出
+    await memoryLogger.info("Memory", "get_memories 输出", {
+      count: results.length,
+      recommendations_preview: results
+        .slice(0, 3)
+        .map((r) => r.recommendation.slice(0, 200)),
+    });
+
+    return results;
   }
 
   /**
@@ -67,9 +91,20 @@ export class Memory {
    * @param record 要添加的记忆记录。
    */
   public async add_memory(record: MemoryRecord): Promise<void> {
-    console.log("Adding new memory:", record);
+    // 文件日志：新增记录输入（避免长文本，占位长度与预览）
+    await memoryLogger.info("Memory", "add_memory 输入", {
+      situation_length: record.situation.length,
+      situation_preview: record.situation.slice(0, 200),
+      recommendation_length: record.recommendation.length,
+      recommendation_preview: record.recommendation.slice(0, 200),
+      timestamp: record.timestamp.toISOString(),
+    });
     this.records.push(record);
     // 在实际应用中，这里会将记录持久化到数据库
+    // 文件日志：集合规模
+    await memoryLogger.info("Memory", "add_memory 完成", {
+      total_records: this.records.length,
+    });
     return Promise.resolve();
   }
 }

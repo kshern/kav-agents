@@ -84,8 +84,10 @@ export async function GET(request: NextRequest) {
       const progressListener = (event: ProgressEvent) => {
         if (aborted) return;
         try {
-          // 持久化每条进度事件
-          void writeLine("progress", event);
+          // 按事件类型记录：final 使用专用类型，其余归类为 progress
+          const type: "started" | "progress" | "final" | "error" | "aborted" =
+            event.stepId === "final" ? "final" : "progress";
+          void writeLine(type, event);
           const data = `data: ${JSON.stringify(event)}\n\n`;
           controller.enqueue(encoder.encode(data));
         } catch {}
@@ -126,22 +128,6 @@ export async function GET(request: NextRequest) {
       // 开始分析
       tradeAgent
         .run({ symbol }, { signal: request.signal })
-        .then((results: unknown[]) => {
-          if (aborted) return;
-          // 发送最终完成事件
-          const finalEvent = {
-            stepId: "final",
-            stepText: "分析完成",
-            status: "completed" as const,
-            progress: 100,
-            result: results,
-          };
-          try {
-            void writeLine("final", finalEvent);
-            const data = `data: ${JSON.stringify(finalEvent)}\n\n`;
-            controller.enqueue(encoder.encode(data));
-          } catch {}
-        })
         .catch((error: unknown) => {
           if (aborted) return; // 客户端已断开，避免再写入
           // 若是取消，发送终止提示；否则发送错误事件

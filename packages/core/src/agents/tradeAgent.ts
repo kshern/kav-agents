@@ -578,6 +578,10 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
             inputs: inputKeys,
             state: dynamicState,
             memory_config: effectiveMemory,
+            model: {
+              provider: modelConfig.provider,
+              model_name: modelConfig.model_name,
+            },
           });
           const res = await analyst({
             ...dynamicState,
@@ -664,6 +668,19 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
       input.memory_override
     );
 
+    // 文件日志：记录一次完整分析的开始（包含覆盖项与模型配置）
+    await this.logger.info("TradeAgent", "分析开始", {
+      symbol: input.symbol,
+      debate_rounds_by_group: debateRoundsByGroupOverride,
+      debate_rounds: debateRoundsOverride,
+      memory_override: input.memory_override,
+      model: {
+        provider: modelConfig.provider,
+        model_name: modelConfig.model_name,
+      },
+      steps_count: steps.length,
+    });
+
     try {
       const results = await runStepsStateful<AgentState>(steps, initialState, {
         onProgress: (e) => {
@@ -686,7 +703,21 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
         abortSignal: options?.signal,
       });
 
+      // 发送最终完成事件（由核心统一发出，避免路由层重复拼装）
+      this.emitProgress({
+        stepId: "final",
+        stepText: "分析完成",
+        status: "completed",
+        progress: 100,
+        result: results,
+      });
+
       this.log(`股票 ${input.symbol} 的分析完成.`);
+      // 文件日志：记录分析完成（不重复落完整结果，避免日志过大）
+      await this.logger.info("TradeAgent", "分析完成", {
+        symbol: input.symbol,
+        steps_count: steps.length,
+      });
       return results as TradeAgentOutput;
     } catch (err) {
       this.handleError(err);

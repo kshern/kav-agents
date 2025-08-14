@@ -8,6 +8,7 @@
 import { BufferMemory, ChatMessageHistory } from "langchain/memory";
 import { HumanMessage, AIMessage } from "@langchain/core/messages";
 import { Memory } from "../../memory"; // 引入业务侧记忆模块，用于情境相似检索
+import { FileLogger } from "../../utils/logger"; // 文件日志工具（落地到 web/logs 下）
 
 /**
  * 历史消息输入类型（避免在适配层中依赖业务的 DebateMessage 类型）
@@ -33,6 +34,10 @@ export interface BuildPastMemoriesOptions {
   topK?: number;
 }
 
+// 记忆适配层专用日志器：日志文件位于运行时 CWD 下的 logs/memory.log
+// 在 Next.js dev（packages/web）下运行时，CWD=packages/web，因此会写入 packages/web/logs/memory.log
+const memLogger = new FileLogger("logs/memory.log");
+
 /**
  * 适配层暴露的能力：根据输入消息构造统一的“过去记忆”字符串
  *
@@ -54,12 +59,37 @@ export async function buildPastMemories(
     if (!situation) {
       // 若未提供情境，回退到 history 策略，避免返回空
       // （也可选择直接返回空字符串）
+      await memLogger.info("MemoryAdapter", "情境检索缺失，回退到 history", {
+        memoryKey,
+        strategy,
+        situation_length: 0,
+        topK,
+        history_count: (history || []).length,
+      });
     } else {
       const mem = new Memory();
+      // 记录检索输入
+      await memLogger.info("MemoryAdapter", "情境检索-开始", {
+        memoryKey,
+        strategy,
+        situation_length: situation.length,
+        situation_preview: situation.slice(0, 200), // 中文注释：仅预览前 200 字，避免日志过大
+        topK,
+        history_count: (history || []).length,
+      });
       const recs = await mem.get_memories(situation, topK);
       const past = (recs || [])
         .map((r, idx) => `(${idx + 1}) ${r.recommendation}`)
         .join("\n");
+      // 记录检索结果
+      await memLogger.info("MemoryAdapter", "情境检索-完成", {
+        memoryKey,
+        strategy,
+        topK,
+        recs_count: (recs || []).length,
+        past_length: past.length,
+        past_preview: past.slice(0, 200),
+      });
       return past;
     }
   }
@@ -78,7 +108,21 @@ export async function buildPastMemories(
     memoryKey,
     returnMessages: false,
   });
+  // 记录历史摘要策略输入
+  await memLogger.info("MemoryAdapter", "历史检索-开始", {
+    memoryKey,
+    strategy: "history",
+    history_count: (history || []).length,
+  });
   const memoryVariables = await memory.loadMemoryVariables({});
   const past = memoryVariables[memoryKey as keyof typeof memoryVariables];
-  return typeof past === "string" ? past : String(past ?? "");
+  const pastStr = typeof past === "string" ? past : String(past ?? "");
+  // 记录历史摘要策略结果
+  await memLogger.info("MemoryAdapter", "历史检索-完成", {
+    memoryKey,
+    strategy: "history",
+    past_length: pastStr.length,
+    past_preview: pastStr.slice(0, 200),
+  });
+  return pastStr;
 }

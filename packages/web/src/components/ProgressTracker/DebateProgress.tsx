@@ -46,7 +46,8 @@ function statusColor(status: StepStatus) {
     case "in-progress":
       return "bg-primary text-primary-foreground ring-1 ring-primary/20";
     case "completed":
-      return "bg-emerald-500 text-white ring-1 ring-emerald-500/20";
+      // A股语义：完成态避免使用绿色，改用红色
+      return "bg-rose-500 text-white ring-1 ring-rose-500/20";
     case "error":
       return "bg-destructive text-destructive-foreground ring-1 ring-destructive/20";
     default:
@@ -102,7 +103,8 @@ export default function DebateProgress({ steps }: DebateProgressProps) {
               <h4 className="text-sm md:text-base font-medium text-foreground">{debateGroupLabel(groupKey)}</h4>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span className="inline-block h-2 w-2 rounded-full bg-primary" /> 进行中
-                <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" /> 已完成
+                {/* 完成态图例改为红色 */}
+                <span className="inline-block h-2 w-2 rounded-full bg-rose-500" /> 已完成
               </div>
             </div>
 
