@@ -8,13 +8,13 @@ import type {
   InvestDebateState,
   RiskDebateState,
 } from "./agentStates";
-import type { MemoryConfig } from "./analysis"; // 引入记忆策略类型，便于在能力签名中透传
+import type { MemoryConfig } from "./trade"; // 引入记忆策略类型，便于在能力签名中透传
 export type {
   AgentState,
   InvestDebateState,
   RiskDebateState,
 } from "./agentStates";
-export * from "./analysis";
+export * from "./trade";
 
 /**
  * 定义了可以对游戏状态值执行的比较操作符。

@@ -15,7 +15,7 @@ export interface MemoryConfig {
   topK?: number;
 }
 
-export interface AnalysisStepConfig {
+export interface TradeStepConfig {
   id: string;
   text: string;
   /**
@@ -91,12 +91,12 @@ export interface DebateGroupConfig {
 /**
  * 流水线条目联合类型：要么是普通步骤（AnalysisStepConfig），要么是辩论分组（DebateGroupConfig）
  */
-export type PipelineItemConfig = AnalysisStepConfig | DebateGroupConfig;
+export type PipelineItemConfig = TradeStepConfig | DebateGroupConfig;
 
 /**
  * 更通用的别名，供逐步迁移使用
  */
-export type StepConfig = AnalysisStepConfig;
+export type StepConfig = TradeStepConfig;
 export type WorkflowItemConfig = PipelineItemConfig;
 
 export type StepStatus = "started" | "completed" | "error";

@@ -8,7 +8,7 @@ import type { CommonAbility } from "../types";
 import { runStepsStateful, StatefulStep } from "../pipeline/executor";
 import type {
   TradeAgentOutput,
-  AnalysisStepConfig,
+  TradeStepConfig,
   ProgressEvent,
   PipelineItemConfig,
   DebateGroupConfig,
@@ -55,7 +55,7 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
   ): item is DebateGroupConfig {
     return (item as { type?: string }).type === "debate";
   }
-  // public static readonly ANALYSIS_STEPS: PipelineItemConfig[] = [
+  // public static readonly TRADE_STEPS: PipelineItemConfig[] = [
   //   // 普通步骤：基本面
   //   {
   //     id: "analyze_fundamentals",
@@ -125,9 +125,9 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
   //     ],
   //   }
   // ];
-  // 定义分析步骤（静态配置，作为唯一数据源）
+  // 定义交易步骤（静态配置，作为唯一数据源）
   // 采用联合类型：普通步骤（AnalysisStepConfig）或辩论分组（type: 'debate'）
-  public static readonly ANALYSIS_STEPS: PipelineItemConfig[] = [
+  public static readonly TRADE_STEPS: PipelineItemConfig[] = [
     {
       id: "analyze_fundamentals",
       text: "分析公司基本面",
@@ -194,14 +194,14 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
   ];
 
   // 实例使用静态配置
-  private readonly analysisSteps = TradeAgent.ANALYSIS_STEPS;
+  private readonly tradeSteps = TradeAgent.TRADE_STEPS;
 
   /**
-   * 获取分析步骤配置（静态方法）
-   * @returns 分析步骤配置数组
+   * 获取交易步骤配置（静态方法）
+   * @returns 交易步骤配置数组
    */
-  public static getAnalysisSteps(): PipelineItemConfig[] {
-    return TradeAgent.ANALYSIS_STEPS;
+  public static getTradeSteps(): PipelineItemConfig[] {
+    return TradeAgent.TRADE_STEPS;
   }
 
   /**
@@ -389,7 +389,7 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
   }
 
   /**
-   * 基于静态配置 ANALYSIS_STEPS 自动生成可执行步骤，支持多轮辩论
+   * 基于静态配置 TRADE_STEPS 自动生成可执行步骤，支持多轮辩论
    * @param debateRounds 辩论轮次
    * @param modelConfig 模型配置
    */
@@ -401,7 +401,7 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
   ): Array<StatefulStep<AgentState>> {
     const steps: Array<StatefulStep<AgentState>> = [];
 
-    for (const item of this.analysisSteps) {
+    for (const item of this.tradeSteps) {
       // 分支1：辩论分组
       if (TradeAgent.isDebateGroupConfig(item)) {
         const groupItem = item;
@@ -437,7 +437,7 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
       }
 
       // 分支2：普通步骤（AnalysisStepConfig）
-      const cfg = item as AnalysisStepConfig;
+      const cfg = item as TradeStepConfig;
       steps.push({
         id: cfg.id,
         text: cfg.text,

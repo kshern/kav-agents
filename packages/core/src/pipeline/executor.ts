@@ -3,7 +3,7 @@
  * - 统一顺序执行、进度回调
  * - 后续可扩展：缓存、并行、超时/重试、DAG 依赖
  */
-import type { ProgressEvent } from "../types/analysis";
+import type { ProgressEvent } from "../types/trade";
 
 export interface Step<TInput, TOutput> {
   id: string;
