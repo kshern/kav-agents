@@ -2,7 +2,7 @@ import { EventEmitter } from "events";
 import { BaseAgent } from "./BaseAgent";
 import { analyzeFundamentals } from "../abilities/analysts/FundamentalsAnalyst";
 import { analyzeMarket } from "../abilities/analysts/MarketAnalyst";
-import { analyzeNews, createTradePlan } from "../abilities";
+import { analyzeNews, createTradePlan, debateAggressive, debateNeutral, debateConservative, manageRisk } from "../abilities";
 import { manageResearch } from "../abilities/managers/ResearchManager";
 import type { CommonAbility } from "../types";
 import { runStepsStateful, StatefulStep } from "../pipeline/executor";
@@ -42,6 +42,17 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
   private eventEmitter = new EventEmitter();
   // 文件日志，记录每一步输入输出，便于离线分析
   private logger = new FileLogger("logs/trade-agent.log");
+  // 进度事件的元信息映射：按步骤ID存储分组/轮次/成员等，供前端分组渲染
+  private progressMetaByStepId: Record<
+    string,
+    {
+      itemType: "step" | "debate";
+      debateGroup?: string;
+      debateRound?: number;
+      debateMemberId?: string;
+      debateMemberText?: string;
+    }
+  > = {};
 
   /**
    * 全局默认记忆策略（当未在运行时/成员/分组指定时生效）
@@ -207,6 +218,80 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
       // 可选：如需为 Trader 单独指定记忆策略，可在此设置
       // memory: { strategy: "situation", topK: 2 },
     },
+    // 风险管理辩论分组：激进 / 中立 / 保守（默认 2 轮，可通过运行时或分组覆盖）
+    {
+      type: "debate",
+      group: "risk_debate",
+      rounds: 2,
+      // 采用默认情境记忆（topK=2），也可在此按分组覆盖：memory: { strategy: "situation", topK: 2 }
+      members: [
+        {
+          id: "risk_aggressive",
+          text: "激进派风险辩手",
+          ability: "debateAggressive",
+          inputs: [
+            "trader_investment_plan",
+            "investment_plan",
+            "market_report",
+            "sentiment_report",
+            "news_report",
+            "fundamentals_report",
+            "risk_debate_state",
+          ],
+          outputs: ["risk_debate_state"],
+          order: 1,
+        },
+        {
+          id: "risk_neutral",
+          text: "中立派风险辩手",
+          ability: "debateNeutral",
+          inputs: [
+            "trader_investment_plan",
+            "investment_plan",
+            "market_report",
+            "sentiment_report",
+            "news_report",
+            "fundamentals_report",
+            "risk_debate_state",
+          ],
+          outputs: ["risk_debate_state"],
+          order: 2,
+        },
+        {
+          id: "risk_conservative",
+          text: "保守派风险辩手",
+          ability: "debateConservative",
+          inputs: [
+            "trader_investment_plan",
+            "investment_plan",
+            "market_report",
+            "sentiment_report",
+            "news_report",
+            "fundamentals_report",
+            "risk_debate_state",
+          ],
+          outputs: ["risk_debate_state"],
+          order: 3,
+        },
+      ],
+    },
+    // 风险经理：整合风险辩论与记忆，产出最终交易决策
+    {
+      id: "manage_risk",
+      text: "风险经理裁决并生成最终交易决定",
+      ability: "riskManager",
+      inputs: [
+        "risk_debate_state",
+        "trader_investment_plan",
+        "investment_plan",
+        "market_report",
+        "sentiment_report",
+        "news_report",
+        "fundamentals_report",
+      ],
+      outputs: ["risk_debate_state", "final_trade_decision"],
+      // memory: { strategy: "situation", topK: 2 }, // 如需单独覆盖可开启
+    },
   ];
 
   // 实例使用静态配置
@@ -235,6 +320,11 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
     this.registerAbility("researchManager", manageResearch);
     // 注册交易员能力（生成最终交易提案）
     this.registerAbility("trader", createTradePlan);
+    // 注册风险管理辩手与经理能力
+    this.registerAbility("debateAggressive", debateAggressive);
+    this.registerAbility("debateNeutral", debateNeutral);
+    this.registerAbility("debateConservative", debateConservative);
+    this.registerAbility("riskManager", manageRisk);
   }
 
   /**
@@ -435,8 +525,17 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
 
         for (let i = 1; i <= debateRounds; i++) {
           for (const m of members) {
+            const stepId = `${groupKey}__${m.id}_r${i}`;
+            // 记录分组元信息，供进度事件携带
+            this.progressMetaByStepId[stepId] = {
+              itemType: "debate",
+              debateGroup: groupKey,
+              debateRound: i,
+              debateMemberId: m.id,
+              debateMemberText: m.text,
+            };
             steps.push({
-              id: `${groupKey}__${m.id}_r${i}`,
+              id: stepId,
               text: `${m.text}（第${i}轮）`,
               // 透传分组级记忆配置与运行时覆盖（成员级在 createDebateRunFn 内覆盖）
               run: this.createDebateRunFn(
@@ -456,6 +555,8 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
 
       // 分支2：普通步骤（AnalysisStepConfig）
       const cfg = item as TradeStepConfig;
+      // 记录普通步骤的元信息
+      this.progressMetaByStepId[cfg.id] = { itemType: "step" };
       steps.push({
         id: cfg.id,
         text: cfg.text,
@@ -554,6 +655,8 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
       Number.isInteger(input.debate_rounds)
         ? Math.max(1, input.debate_rounds)
         : undefined;
+    // 重置进度元信息映射，避免跨次运行污染
+    this.progressMetaByStepId = {};
     const steps = this.buildStepsFromConfig(
       debateRoundsByGroupOverride,
       debateRoundsOverride,
@@ -563,7 +666,8 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
 
     try {
       const results = await runStepsStateful<AgentState>(steps, initialState, {
-        onProgress: (e) =>
+        onProgress: (e) => {
+          const meta = this.progressMetaByStepId[e.stepId];
           this.emitProgress({
             stepId: e.stepId,
             stepText: e.stepText,
@@ -571,7 +675,14 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
             progress: e.progress,
             result: e.result,
             error: e.error,
-          }),
+            // 附带元信息，前端即可按分组/轮次区分 UI
+            itemType: meta?.itemType ?? "step",
+            debateGroup: meta?.debateGroup,
+            debateRound: meta?.debateRound,
+            debateMemberId: meta?.debateMemberId,
+            debateMemberText: meta?.debateMemberText,
+          });
+        },
         abortSignal: options?.signal,
       });
 

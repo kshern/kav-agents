@@ -1,35 +1,53 @@
 /**
  * @file 保守派辩手 Agent
- * @description 定义了在风险管理辩论中持保守观点的函数。
+ * @description 定义了在风险管理辩论中持保守观点的函数（已适配通用辩论能力签名）。
  */
 
-import { AgentState } from "../../../types/agentStates";
-import { fillPromptTemplate } from "../../../utils";
-import conservativeTemplate from "./conservative.md?raw";
+import { RiskDebateState } from "../../../types/agentStates";
+import { parseAndRenderTemplate } from "../../../utils";
+import { loadTemplate } from "../../../utils/templateLoader";
 import { generateContent } from "../../../models/gateway";
-
-const modelConfig = {
-  provider: "openrouter",
-  model_name: "z-ai/glm-4.5-air:free",
-  api_key: process.env.OPENROUTER_API_KEY,
-};
+import { Model, MemoryConfig } from "../../../types";
 
 /**
- * 基于初步投资计划和所有分析报告，从保守的角度生成风险评估论点。
- *
- * @param state - 当前的 Agent 状态。
- * @returns - 返回包含保守派论点的对象。
+ * 基于交易员计划与所有报告，从保守视角生成论点并更新风险辩论状态。
  */
-export async function debateConservative(
-  state: AgentState,
-): Promise<{ conservative_argument: string }> {
-  const prompt = fillPromptTemplate(conservativeTemplate, {
-    investment_plan: state.investment_plan,
-    risk_debate_history: state.risk_debate_state.history,
-    market_report: state.market_report,
-    sentiment_report: state.sentiment_report,
-    news_report: state.news_report,
-    fundamentals_report: state.fundamentals_report,
+export async function debateConservative(props: {
+  state: {
+    trader_investment_plan?: string;
+    investment_plan?: string;
+    market_report: string;
+    sentiment_report: string;
+    news_report: string;
+    fundamentals_report: string;
+    risk_debate_state: RiskDebateState;
+    memory_config?: MemoryConfig;
+  };
+  modelConfig: Model;
+}): Promise<{ risk_debate_state: RiskDebateState }> {
+  const {
+    state: {
+      trader_investment_plan,
+      investment_plan,
+      market_report,
+      sentiment_report,
+      news_report,
+      fundamentals_report,
+      risk_debate_state,
+    },
+    modelConfig,
+  } = props;
+
+  const plan = trader_investment_plan || investment_plan || "";
+
+  const template = await loadTemplate("conservative.md", import.meta.url);
+  const prompt = parseAndRenderTemplate(template, {
+    investment_plan: plan,
+    risk_debate_history: risk_debate_state.history,
+    market_report,
+    sentiment_report,
+    news_report,
+    fundamentals_report,
   });
 
   try {
@@ -37,9 +55,18 @@ export async function debateConservative(
       modelConfig,
       prompt,
     });
-    return { conservative_argument: result };
+    const argument = `Conservative Analyst: ${result}`;
+    const newState: RiskDebateState = {
+      ...risk_debate_state,
+      history: (risk_debate_state.history || "") + (risk_debate_state.history ? "\n" : "") + argument,
+      safe_history: (risk_debate_state.safe_history || "") + (risk_debate_state.safe_history ? "\n" : "") + argument,
+      current_safe_response: argument,
+      latest_speaker: "Conservative",
+      count: (risk_debate_state.count || 0) + 1,
+    };
+    return { risk_debate_state: newState };
   } catch (error) {
     console.error("Error generating conservative debator argument:", error);
-    return { conservative_argument: "生成保守派论点时出错。" };
+    return { risk_debate_state };
   }
 }

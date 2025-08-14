@@ -108,6 +108,19 @@ export interface ProgressEvent {
   progress: number; // 0-100
   result?: unknown;
   error?: string;
+  /**
+   * 可选：用于前端分组渲染的元信息
+   * - itemType: 区分普通步骤与辩论步骤
+   * - debateGroup: 辩论分组键（如 main_debate, risk_debate）
+   * - debateRound: 当前辩论轮次（从 1 开始）
+   * - debateMemberId: 分组成员 ID（如 bull_researcher, debateAggressive）
+   * - debateMemberText: 分组成员显示文案
+   */
+  itemType?: "step" | "debate";
+  debateGroup?: string;
+  debateRound?: number;
+  debateMemberId?: string;
+  debateMemberText?: string;
 }
 
 export interface AnalysisResult {

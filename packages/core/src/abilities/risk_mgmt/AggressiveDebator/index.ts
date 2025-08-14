@@ -1,35 +1,58 @@
 /**
  * @file 激进派辩手 Agent
- * @description 定义了在风险管理辩论中持激进观点的函数。
+ * @description 定义了在风险管理辩论中持激进观点的函数（已适配通用辩论能力签名）。
  */
 
-import { AgentState } from "../../../types/agentStates";
-import { fillPromptTemplate } from "../../../utils";
-import aggressiveTemplate from "./aggressive.md?raw";
+import { RiskDebateState } from "../../../types/agentStates";
+import { parseAndRenderTemplate } from "../../../utils";
+import { loadTemplate } from "../../../utils/templateLoader";
 import { generateContent } from "../../../models/gateway";
-
-const modelConfig = {
-  provider: "openrouter",
-  model_name: "z-ai/glm-4.5-air:free",
-  api_key: process.env.OPENROUTER_API_KEY,
-};
+import { Model, MemoryConfig } from "../../../types";
 
 /**
- * 基于初步投资计划和所有分析报告，从激进的角度生成风险评估论点。
+ * 基于交易员计划与所有报告，从激进视角生成论点并更新风险辩论状态。
  *
- * @param state - 当前的 Agent 状态。
- * @returns - 返回包含激进派论点的对象。
+ * @param props.state - 仅包含本步骤所需的状态切片（由编排器按 inputs 动态构建）。
+ * @param props.modelConfig - 模型配置（由编排器统一注入）。
  */
-export async function debateAggressive(
-  state: AgentState,
-): Promise<{ aggressive_argument: string }> {
-  const prompt = fillPromptTemplate(aggressiveTemplate, {
-    investment_plan: state.investment_plan,
-    risk_debate_history: state.risk_debate_state.history,
-    market_report: state.market_report,
-    sentiment_report: state.sentiment_report,
-    news_report: state.news_report,
-    fundamentals_report: state.fundamentals_report,
+export async function debateAggressive(props: {
+  state: {
+    trader_investment_plan?: string;
+    investment_plan?: string;
+    market_report: string;
+    sentiment_report: string;
+    news_report: string;
+    fundamentals_report: string;
+    risk_debate_state: RiskDebateState;
+    memory_config?: MemoryConfig; // 保留以对齐其它研究员签名（当前未直接使用）
+  };
+  modelConfig: Model;
+}): Promise<{ risk_debate_state: RiskDebateState }> {
+  const {
+    state: {
+      trader_investment_plan,
+      investment_plan,
+      market_report,
+      sentiment_report,
+      news_report,
+      fundamentals_report,
+      risk_debate_state,
+    },
+    modelConfig,
+  } = props;
+
+  // 交易员计划优先，兼容早期依赖 investment_plan 的模板
+  const plan = trader_investment_plan || investment_plan || "";
+
+  // 使用通用模板加载工具，保持与 FundamentalsAnalyst 一致
+  const template = await loadTemplate("aggressive.md", import.meta.url);
+  const prompt = parseAndRenderTemplate(template, {
+    investment_plan: plan,
+    risk_debate_history: risk_debate_state.history,
+    market_report,
+    sentiment_report,
+    news_report,
+    fundamentals_report,
   });
 
   try {
@@ -37,9 +60,22 @@ export async function debateAggressive(
       modelConfig,
       prompt,
     });
-    return { aggressive_argument: result };
+
+    const argument = `Aggressive Analyst: ${result}`;
+    const newState: RiskDebateState = {
+      ...risk_debate_state,
+      // 将历史串接（RiskDebateState.history 为字符串）
+      history: (risk_debate_state.history || "") + (risk_debate_state.history ? "\n" : "") + argument,
+      risky_history: (risk_debate_state.risky_history || "") + (risk_debate_state.risky_history ? "\n" : "") + argument,
+      current_risky_response: argument,
+      latest_speaker: "Aggressive",
+      count: (risk_debate_state.count || 0) + 1,
+    };
+
+    return { risk_debate_state: newState };
   } catch (error) {
     console.error("Error generating aggressive debator argument:", error);
-    return { aggressive_argument: "生成激进派论点时出错。" };
+    // 失败时返回原状态，避免中断流水线
+    return { risk_debate_state };
   }
 }
