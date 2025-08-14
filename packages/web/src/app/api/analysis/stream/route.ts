@@ -16,16 +16,25 @@ export async function GET(request: NextRequest) {
   const supabase = createSupabaseServerClient(request, res);
   const { data, error } = await supabase.auth.getUser();
   if (error || !data?.user) {
-    return new NextResponse(JSON.stringify({ success: false, error: "未登录" }), {
-      status: 401,
-      headers: { "Content-Type": "application/json", ...Object.fromEntries(res.headers) },
-    });
+    return new NextResponse(
+      JSON.stringify({ success: false, error: "未登录" }),
+      {
+        status: 401,
+        headers: {
+          "Content-Type": "application/json",
+          ...Object.fromEntries(res.headers),
+        },
+      }
+    );
   }
-  const userId = data.user.id;
+  const _userId = data.user.id; // 目前不再传入 Supabase 层，仅保留以备审计/扩展
   const { searchParams } = new URL(request.url);
   const analysisId = searchParams.get("analysisId");
   if (!analysisId) {
-    return NextResponse.json({ error: "analysisId 不能为空" }, { status: 400 });
+    return NextResponse.json(
+      { error: "analysisId 不能为空" },
+      { status: 400 }
+    );
   }
 
   // 优先使用 query 提供的 symbol；若缺失则从 Supabase 会话映射读取
@@ -34,7 +43,10 @@ export async function GET(request: NextRequest) {
     symbol = await readSessionSymbol(supabase, analysisId);
   }
   if (!symbol) {
-    return NextResponse.json({ error: "无法根据 analysisId 获取 symbol" }, { status: 400 });
+    return NextResponse.json(
+      { error: "无法根据 analysisId 获取 symbol" },
+      { status: 400 }
+    );
   }
 
   // 设置 SSE 响应头
@@ -50,10 +62,15 @@ export async function GET(request: NextRequest) {
   const encoder = new TextEncoder();
 
   // 统一存储接口封装（JSONL/SQL 可替换）
-  const writeLine = async (type: "started" | "progress" | "final" | "error" | "aborted", event?: unknown) => {
+  const writeLine = async (
+    type: "started" | "progress" | "final" | "error" | "aborted",
+    event?: unknown
+  ) => {
     try {
-      // 这里把 Supabase 客户端与用户 ID 传入，使“完成态”事件能写入云端表 public.analysis_events
-      await appendEvent(analysisId, symbol, type, event, new Date().toISOString(), supabase, userId);
+      // 这里把 Supabase 客户端传入，使“完成态/错误态”事件能写入云端表 public.analysis_events
+      // 新签名：appendEvent(analysisId, type, event?, ts?, supabase?)
+      // 数据量比较大，暂时不用
+      // await appendEvent(analysisId, type, event, new Date().toISOString(), supabase);
     } catch {}
   };
 

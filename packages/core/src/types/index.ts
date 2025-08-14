@@ -225,7 +225,12 @@ export interface NewsArticle {
  * @interface NewsAnalystProps
  * @description 新闻分析师的属性
  */
-export interface NewsAnalystProps extends CommonProps {}
+export interface NewsAnalystProps extends CommonProps {
+  /** 关注的公司代码（如 AAPL、MSFT） */
+  company_of_interest: string;
+  /** 交易日期：可传 ISO 字符串、时间戳或 Date 对象，供 Date 构造函数安全使用 */
+  trade_date: string | number | Date;
+}
 
 // 定义 ResearchManager Agent 的输入参数类型
 export interface ResearchManagerProps {

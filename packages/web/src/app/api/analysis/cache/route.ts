@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const events = await readEvents(analysisId, supabase, userId);
+    const events = await readEvents(analysisId, supabase);
     const json = NextResponse.json({ success: true, data: events }, { status: 200 });
     // 透传可能刷新的会话 Set-Cookie（与 stream 路由行为保持一致）
     for (const [k, v] of res.headers) json.headers.set(k, v);

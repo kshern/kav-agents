@@ -5,7 +5,7 @@
 
 import { Model, MemoryConfig } from "../../../types"; // 引入模型与记忆配置类型
 import { parseAndRenderTemplate } from "../../../utils";
-import traderTemplate from "./trader.md?raw";
+ import { loadTemplate } from "../../../utils/templateLoader"; // 统一的模板加载器（与 FundamentalsAnalyst 保持一致）
 import { generateContent } from "../../../models/gateway";
 import { buildPastMemories } from "../../../adapters/memory"; // 统一的记忆适配层
 
@@ -87,7 +87,9 @@ export async function createTradePlan(
     pastMemories = "";
   }
 
-  const prompt = parseAndRenderTemplate(traderTemplate, {
+  // 使用公共模板加载器按 URL 相对路径加载 Markdown 模板（与 FundamentalsAnalyst 保持一致）
+  const template = await loadTemplate("trader.md", import.meta.url);
+  const prompt = parseAndRenderTemplate(template, {
     company_of_interest: props.company_of_interest,
     investment_plan: props.investment_plan,
     pastMemories,

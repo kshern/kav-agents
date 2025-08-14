@@ -59,7 +59,7 @@ export async function analyzeNews(
     const formatDate = (date: Date) => date.toISOString().split("T")[0];
 
     const newsArticles = await getNewsFromApi(
-      company_of_interest,
+      String(company_of_interest),
       formatDate(fromDate),
       formatDate(toDate),
     );

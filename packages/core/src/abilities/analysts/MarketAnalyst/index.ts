@@ -30,7 +30,7 @@ export const analyzeMarket = async (
 
   try {
     // 1. 获取原始数据
-    const stockData = await getStockData(company_of_interest);
+    const stockData = await getStockData(String(company_of_interest));
     console.log(stockData);
     // 2. 构建提示
     // 注意：Alpha Vantage 的免费 API 不直接提供详细的 stockInfo 和 recommendations
