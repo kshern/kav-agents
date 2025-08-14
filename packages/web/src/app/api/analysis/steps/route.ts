@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
       });
     }
     // 从 TradeAgent 获取步骤配置
-    const steps = TradeAgent.getAnalysisSteps();
+    const steps = TradeAgent.getTradeSteps();
 
     return new NextResponse(JSON.stringify({ success: true, data: steps }), {
       status: 200,

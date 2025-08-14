@@ -23,5 +23,5 @@ export { analyzeSocialMedia } from "./analysts/SocialMediaAnalyst";
 // export { debateNeutral } from "./risk_mgmt/NeutralDebator";
 
 // 交易员
-// export { createTradePlan } from "./trader/Trader";
-// export type { TradePlan } from "./trader/Trader";
+export { createTradePlan } from "./trader/Trader"; // 交易员生成最终交易提案的能力
+export type { TradePlan } from "./trader/Trader";

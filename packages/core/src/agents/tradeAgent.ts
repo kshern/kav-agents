@@ -2,7 +2,7 @@ import { EventEmitter } from "events";
 import { BaseAgent } from "./BaseAgent";
 import { analyzeFundamentals } from "../abilities/analysts/FundamentalsAnalyst";
 import { analyzeMarket } from "../abilities/analysts/MarketAnalyst";
-import { analyzeNews } from "../abilities";
+import { analyzeNews, createTradePlan } from "../abilities";
 import { manageResearch } from "../abilities/managers/ResearchManager";
 import type { CommonAbility } from "../types";
 import { runStepsStateful, StatefulStep } from "../pipeline/executor";
@@ -27,7 +27,7 @@ import { FileLogger } from "../utils/logger";
 export interface TradeAgentInput {
   symbol: string; // 股票代码
   debate_rounds?: number; // 辩论轮次（可选，用于覆盖配置中的默认轮次）
-  debate_rounds_by_group?: Record<string, number>; // 按分组覆盖辩论轮次，例如 { main_debate: 2, risk_debate: 1 }
+  debate_rounds_by_group?: Record<string, number>; // 按分组覆盖辩论轮次，例如 { researcher_debate: 2, risk_debate: 1 }
   /**
    * 可选：运行时覆盖记忆策略（最高优先级），将应用于所有辩论成员
    */
@@ -151,7 +151,7 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
     },
     {
       type: "debate", // 辩论分组
-      group: "main_debate", // 分组键
+      group: "researcher_debate", // 分组键
       rounds: 3, // 该分组默认轮次
       members: [
         {
@@ -191,6 +191,22 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
       inputs: ["investment_debate_state"],
       outputs: ["investment_plan", "investment_debate_state"],
     },
+    {
+      id: "create_trade_plan",
+      text: "交易员生成最终交易提案",
+      ability: "trader",
+      inputs: [
+        "company_of_interest",
+        "investment_plan",
+        "market_report",
+        "sentiment_report",
+        "news_report",
+        "fundamentals_report",
+      ],
+      outputs: ["trader_investment_plan"],
+      // 可选：如需为 Trader 单独指定记忆策略，可在此设置
+      // memory: { strategy: "situation", topK: 2 },
+    },
   ];
 
   // 实例使用静态配置
@@ -217,6 +233,8 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
     this.registerAbility("bearResearcher", researchBear);
     // 注册研究经理能力（用于裁决并生成投资计划）
     this.registerAbility("researchManager", manageResearch);
+    // 注册交易员能力（生成最终交易提案）
+    this.registerAbility("trader", createTradePlan);
   }
 
   /**
@@ -448,21 +466,27 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
           // 根据配置 inputs 动态构造入参
           const inputKeys = cfg.inputs || [];
           const dynamicState = this.buildDynamicState(inputKeys, state);
+          // 合并普通步骤的记忆策略（优先级：运行时覆盖 > 步骤级 > 全局默认）
+          const effectiveMemory: MemoryConfig =
+            runtimeMemoryOverride ?? cfg.memory ?? this.defaultMemory;
           // 文件日志：记录普通步骤输入
-          await this.logger.info("TradeAgent", "普通步骤输入", {
+          this.logger.info("TradeAgent", "普通步骤输入", {
             stepId: cfg.id,
             text: cfg.text,
             ability: abilityKey,
-            analyst: abilityKey,
             inputs: inputKeys,
             state: dynamicState,
+            memory_config: effectiveMemory,
           });
-          const res = await analyst({ ...dynamicState, modelConfig });
+          const res = await analyst({
+            ...dynamicState,
+            modelConfig,
+            memory_config: effectiveMemory,
+          });
           // 文件日志：记录普通步骤输出
-          await this.logger.info("TradeAgent", "普通步骤输出", {
+          this.logger.info("TradeAgent", "普通步骤输出", {
             stepId: cfg.id,
             ability: abilityKey,
-            analyst: abilityKey,
             rawResult: res,
           });
           return res as Partial<AgentState>;
