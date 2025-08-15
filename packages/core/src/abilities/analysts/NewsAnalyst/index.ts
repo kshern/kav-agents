@@ -8,15 +8,9 @@ import { parseAndRenderTemplate } from "../../../utils";
 import { NewsAnalystProps, NewsArticle } from "../../../types";
 import { loadTemplate } from "../../../utils/templateLoader"; // 动态加载模板，兼容Vite和Node环境
 import { generateContent } from "../../../models/gateway";
+import { getModelConfig } from "../../../config/models"; // 集中式模型配置
 
-// 在 Vite 环境下，您需要手动添加以下导入语句：
-// import newsTemplate from './news.md?raw';
-// 然后在 analyzeNews 函数中传入 newsTemplate 参数
-const modelConfig = {
-  provider: "openrouter",
-  model_name: "z-ai/glm-4.5-air:free",
-  api_key: process.env.OPENROUTER_API_KEY,
-};
+// 提示：Vite 环境可通过 '?raw' 直接引入模板；这里统一用 loadTemplate 动态加载，无需本地 modelConfig
 
 /**
  * 格式化新闻文章列表为字符串。
@@ -46,7 +40,7 @@ function formatNewsArticles(articles: NewsArticle[]): string {
 export async function analyzeNews(
   props: NewsAnalystProps,
 ): Promise<{ news_report: string }> {
-  const { company_of_interest, trade_date } = props;
+  const { company_of_interest, trade_date, modelConfig } = props; // 支持注入模型配置
 
   try {
     // 1. 获取新闻数据
@@ -76,9 +70,10 @@ export async function analyzeNews(
       news_articles: formattedNews,
     }); // 用统一工具渲染模板
 
-    // 3. 调用模型生成报告
+    // 3. 计算有效模型并生成报告（优先使用注入，其次回退到集中默认）
+    const effectiveModel = modelConfig ?? getModelConfig("newsAnalyst");
     const result = await generateContent({
-      modelConfig,
+      modelConfig: effectiveModel,
       prompt,
     });
 

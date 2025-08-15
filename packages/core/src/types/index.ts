@@ -204,13 +204,31 @@ export type DebateResearcherAbility = (props: {
  * @interface FundamentalsAnalystProps
  * @description 基本面分析师的属性
  */
-export interface FundamentalsAnalystProps extends CommonProps {}
+export interface FundamentalsAnalystProps extends CommonProps {
+  /** 关注的公司代码 */
+  company_of_interest: string;
+  /** 交易日期 */
+  trade_date: string | number | Date;
+  /** 可选：由编排层注入的模型配置 */
+  modelConfig?: Model;
+  /** 可选：记忆策略（暂不强制使用） */
+  memory_config?: MemoryConfig;
+}
 
 /**
  * @interface MarketAnalystProps
  * @description 市场分析师的属性
  */
-export interface MarketAnalystProps extends CommonProps {}
+export interface MarketAnalystProps extends CommonProps {
+  /** 关注的公司代码 */
+  company_of_interest: string;
+  /** 交易日期 */
+  trade_date: string | number | Date;
+  /** 可选：由编排层注入的模型配置 */
+  modelConfig?: Model;
+  /** 可选：记忆策略（暂不强制使用） */
+  memory_config?: MemoryConfig;
+}
 
 // 定义新闻文章的结构
 export interface NewsArticle {
@@ -230,6 +248,25 @@ export interface NewsAnalystProps extends CommonProps {
   company_of_interest: string;
   /** 交易日期：可传 ISO 字符串、时间戳或 Date 对象，供 Date 构造函数安全使用 */
   trade_date: string | number | Date;
+  /** 可选：由编排层注入的模型配置 */
+  modelConfig?: Model;
+  /** 可选：记忆策略（暂不强制使用） */
+  memory_config?: MemoryConfig;
+}
+
+/**
+ * @interface SocialMediaAnalystProps
+ * @description 社交媒体分析师的属性
+ */
+export interface SocialMediaAnalystProps extends CommonProps {
+  /** 关注的公司代码（如 AAPL、MSFT） */
+  company_of_interest: string;
+  /** 交易日期：可传 ISO 字符串、时间戳或 Date 对象，供 Date 构造函数安全使用 */
+  trade_date: string | number | Date;
+  /** 可选：由编排层注入的模型配置 */
+  modelConfig?: Model;
+  /** 可选：记忆策略（暂不强制使用） */
+  memory_config?: MemoryConfig;
 }
 
 // 定义 ResearchManager Agent 的输入参数类型

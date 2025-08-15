@@ -7,6 +7,8 @@
 import { parseAndRenderTemplate } from "../../../utils";
 import { loadTemplate } from "../../../utils/templateLoader"; // 动态加载模板，兼容Vite和Node环境
 import { generateContent } from "../../../models/gateway";
+import { getModelConfig } from "../../../config/models"; // 集中式模型配置
+import type { SocialMediaAnalystProps } from "../../../types"; // 统一使用集中定义的 Props 类型
 // 定义社交媒体帖子的结构
 export interface SocialMediaPost {
   title: string; // 标题
@@ -15,10 +17,7 @@ export interface SocialMediaPost {
   url: string; // 链接
 }
 
-// 定义 SocialMediaAnalyst Agent 的输入参数类型
-export interface SocialMediaAnalystProps {
-  redditPosts: SocialMediaPost[]; // Reddit 帖子列表
-}
+// 提示：如需扩展 Reddit 数据源，可在类型层统一维护，避免在此文件重复定义
 /**
  * 格式化 Reddit 帖子列表为字符串。
  * @param posts - Reddit 帖子对象数组。
@@ -43,11 +42,10 @@ function formatRedditPosts(posts: SocialMediaPost[]): string {
  * @param props - 当前的 Agent 需要的参数，包含公司代码和交易日期。
  * @returns - 返回一个包含社交媒体情绪报告的对象。
  */
-export async function analyzeSocialMedia(props: {
-  company_of_interest: string;
-  trade_date: string;
-}): Promise<{ sentiment_report: string }> {
-  const { company_of_interest, trade_date } = props;
+export async function analyzeSocialMedia(
+  props: SocialMediaAnalystProps,
+): Promise<{ sentiment_report: string }> {
+  const { company_of_interest, trade_date, modelConfig } = props;
 
   try {
     // 1. 获取 Reddit 数据
@@ -71,14 +69,10 @@ export async function analyzeSocialMedia(props: {
       reddit_posts: formattedPosts,
     }); // 用统一工具渲染模板
 
-    const modelConfig = {
-      provider: "openrouter",
-      model_name: "z-ai/glm-4.5-air:free",
-      api_key: process.env.OPENROUTER_API_KEY,
-    };
-
+    // 3. 计算有效模型并生成报告（优先使用注入，其次回退到集中默认）
+    const effectiveModel = modelConfig ?? getModelConfig("socialMediaAnalyst");
     const result = await generateContent({
-      modelConfig,
+      modelConfig: effectiveModel,
       prompt,
     });
 

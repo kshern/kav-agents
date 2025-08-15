@@ -6,15 +6,9 @@ import { generateContent } from "../../../models/gateway";
 import { parseAndRenderTemplate } from "../../../utils";
 import { loadTemplate } from "../../../utils/templateLoader";
 import { FundamentalsAnalystProps } from "../../../types";
+import { getModelConfig } from "../../../config/models"; // 集中式模型配置
 
-// 在 Vite 环境下，您需要手动添加以下导入语句：
-// import fundamentalsTemplate from './fundamentals.md?raw';
-// 然后在 analyzeFundamentals 函数中传入 fundamentalsTemplate 参数
-const modelConfig = {
-  provider: "openrouter",
-  model_name: "z-ai/glm-4.5-air:free",
-  api_key: process.env.OPENROUTER_API_KEY,
-};
+// 在 Vite 环境下，您可通过 '?raw' 直接引入模板；此处统一用 loadTemplate 动态加载，无需本地 modelConfig
 /**
  * 分析给定公司的基本面信息并生成报告。
  *
@@ -27,7 +21,7 @@ export const analyzeFundamentals = async (
   // 使用公共工具加载模板
   const template = await loadTemplate("fundamentals.md", import.meta.url);
 
-  const { company_of_interest, trade_date } = props;
+  const { company_of_interest, trade_date, modelConfig } = props; // 支持注入模型配置
   const renderedTemplate = parseAndRenderTemplate(template, {
     company_of_interest,
     trade_date,
@@ -44,9 +38,10 @@ export const analyzeFundamentals = async (
       true, // 启用调试输出
     );
 
-    // 不再需要返回元数据，因为它已经在parseAndRenderTemplate函数中处理
+    // 计算有效模型并生成报告（优先使用注入，其次回退到集中默认）
+    const effectiveModel = modelConfig ?? getModelConfig("fundamentalsAnalyst");
     const result = await generateContent({
-      modelConfig,
+      modelConfig: effectiveModel,
       prompt: finalPrompt,
     });
 

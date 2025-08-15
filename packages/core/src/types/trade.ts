@@ -3,6 +3,8 @@
  * 供 core 与 web 端通过 type-only 方式共享，避免重复定义
  */
 
+import type { Model } from "./index"; // 类型导入：用于 model 覆盖
+
 /**
  * 记忆策略配置（配置驱动）
  * - strategy: 'history' 使用对话历史的 BufferMemory 摘要
@@ -52,6 +54,11 @@ export interface TradeStepConfig {
    * 说明：辩论成员/分组建议在各自配置上使用 memory 字段，这里仅作为补充与向后兼容
    */
   memory?: MemoryConfig;
+  /**
+   * 可选：步骤级模型配置覆盖（Partial 合并覆盖）
+   * 说明：编排层会按优先级合并：运行时覆盖 > 步骤级 > 能力默认
+   */
+  model?: Partial<Model>;
 }
 
 /**
@@ -71,6 +78,10 @@ export interface DebateMemberConfig {
    * 可选：成员级记忆策略配置（优先级高于分组级的 memory 配置）
    */
   memory?: MemoryConfig;
+  /**
+   * 可选：成员级模型配置覆盖（Partial 合并覆盖）
+   */
+  model?: Partial<Model>;
 }
 
 /**
@@ -86,6 +97,11 @@ export interface DebateGroupConfig {
    * 可选：分组级记忆策略配置（被成员级 memory 覆盖时失效）
    */
   memory?: MemoryConfig;
+  /**
+   * 可选：分组级模型配置覆盖（Partial 合并覆盖）
+   * 成员级 model 会覆盖分组级；运行时覆盖优先级最高
+   */
+  model?: Partial<Model>;
 }
 
 /**

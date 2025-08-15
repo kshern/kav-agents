@@ -7,12 +7,8 @@ import { parseAndRenderTemplate } from "../../../utils";
 import { loadTemplate } from "../../../utils/templateLoader"; // 动态加载模板，兼容Vite和Node环境
 import { getStockData } from "../../../dataflows/alphaVantageUtils";
 import { MarketAnalystProps } from "../../../types";
+import { getModelConfig } from "../../../config/models"; // 集中式模型配置
 
-const modelConfig = {
-  provider: "openrouter",
-  model_name: "z-ai/glm-4.5-air:free",
-  api_key: process.env.OPENROUTER_API_KEY,
-};
 
 /**
  * 分析给定公司的市场信息并生成报告。
@@ -23,7 +19,7 @@ const modelConfig = {
 export const analyzeMarket = async (
   props: MarketAnalystProps,
 ): Promise<{ market_report: string }> => {
-  const { company_of_interest, trade_date } = props;
+  const { company_of_interest, trade_date, modelConfig } = props; // 支持注入模型配置
 
   try {
     // 1. 获取原始数据
@@ -40,9 +36,10 @@ export const analyzeMarket = async (
       stockData: JSON.stringify(stockData),
     }); // 用统一工具渲染模板
 
-    // 3. 调用模型生成报告
+    // 3. 计算有效模型并生成报告（优先使用注入，其次回退到集中默认）
+    const effectiveModel = modelConfig ?? getModelConfig("marketAnalyst");
     const result = await generateContent({
-      modelConfig,
+      modelConfig: effectiveModel,
       prompt,
     });
 

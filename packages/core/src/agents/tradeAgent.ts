@@ -19,6 +19,8 @@ import { researchBull } from "../abilities/researchers/BullResearcher";
 import { researchBear } from "../abilities/researchers/BearResearcher";
 // import { manageResearch } from "../abilities/managers/ResearchManager";
 import type { AgentState, Model } from "../types";
+import { getModelConfig as getAbilityDefaultModel, mergeModelConfig } from "../config/models";
+import type { AbilityKey } from "../config/models";
 import { FileLogger } from "../utils/logger";
 
 /**
@@ -32,6 +34,10 @@ export interface TradeAgentInput {
    * 可选：运行时覆盖记忆策略（最高优先级），将应用于所有辩论成员
    */
   memory_override?: MemoryConfig;
+  /**
+   * 可选：运行时覆盖模型配置（最高优先级），将应用于所有步骤/成员
+   */
+  model_override?: Partial<Model>;
 }
 
 /**
@@ -145,6 +151,8 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
       ability: "fundamentalsAnalyst",
       inputs: ["company_of_interest", "trade_date"],
       outputs: ["fundamentals_report"],
+      // 顶层示例：为基本面分析覆盖模型为 Google Gemini 2.5 Pro
+      model: { provider: "google", model_name: "gemini-2.5-pro" },
     },
     {
       id: "analyze_market",
@@ -419,6 +427,23 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
   }
 
   /**
+   * 统一计算能力的有效模型配置
+   * 合并顺序从低到高优先级：默认(按能力) -> 传入的各级覆盖项（依次覆盖）
+   * @param abilityKey 能力键（用于从集中配置取默认模型）
+   * @param overrides 覆盖项数组，按优先级依次传入，例如：[groupModel, memberModel, runtimeOverride]
+   */
+  private resolveEffectiveModel(
+    abilityKey: AbilityKey,
+    overrides: Array<Partial<Model> | undefined>,
+  ): Model {
+    let model = getAbilityDefaultModel(abilityKey);
+    for (const ov of overrides) {
+      if (ov) model = mergeModelConfig(model, ov);
+    }
+    return model;
+  }
+
+  /**
    * 生成辩论步骤的 run 函数（封装日志、入参装配、能力调用与输出提取）
    */
   private createDebateRunFn(
@@ -504,8 +529,8 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
   private buildStepsFromConfig(
     debateRoundsByGroupOverride: Record<string, number> | undefined, // 按分组覆盖的轮次
     debateRoundsOverride: number | undefined, // 全局覆盖轮次
-    modelConfig: Model,
-    runtimeMemoryOverride?: MemoryConfig // 运行时记忆策略覆盖
+    runtimeMemoryOverride?: MemoryConfig, // 运行时记忆策略覆盖
+    runtimeModelOverride?: Partial<Model> // 运行时模型覆盖
   ): Array<StatefulStep<AgentState>> {
     const steps: Array<StatefulStep<AgentState>> = [];
 
@@ -534,6 +559,13 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
               debateMemberId: m.id,
               debateMemberText: m.text,
             };
+            // 计算该成员本轮的有效模型配置：默认(按能力) -> 分组级覆盖 -> 成员级覆盖 -> 运行时覆盖
+            const abilityKey = m.ability as AbilityKey;
+            const effectiveModel = this.resolveEffectiveModel(abilityKey, [
+              groupItem.model,
+              m.model,
+              runtimeModelOverride,
+            ]);
             steps.push({
               id: stepId,
               text: `${m.text}（第${i}轮）`,
@@ -542,7 +574,7 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
                 groupKey,
                 m,
                 i,
-                modelConfig,
+                effectiveModel,
                 groupItem.memory,
                 runtimeMemoryOverride
               ),
@@ -570,6 +602,12 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
           // 合并普通步骤的记忆策略（优先级：运行时覆盖 > 步骤级 > 全局默认）
           const effectiveMemory: MemoryConfig =
             runtimeMemoryOverride ?? cfg.memory ?? this.defaultMemory;
+          // 计算普通步骤有效模型：默认(按能力) -> 步骤级覆盖 -> 运行时覆盖
+          const abilityKeyTyped = abilityKey as AbilityKey;
+          const effectiveModel = this.resolveEffectiveModel(abilityKeyTyped, [
+            cfg.model,
+            runtimeModelOverride,
+          ]);
           // 文件日志：记录普通步骤输入
           this.logger.info("TradeAgent", "普通步骤输入", {
             stepId: cfg.id,
@@ -579,13 +617,13 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
             state: dynamicState,
             memory_config: effectiveMemory,
             model: {
-              provider: modelConfig.provider,
-              model_name: modelConfig.model_name,
+              provider: effectiveModel.provider,
+              model_name: effectiveModel.model_name,
             },
           });
           const res = await analyst({
             ...dynamicState,
-            modelConfig,
+            modelConfig: effectiveModel,
             memory_config: effectiveMemory,
           });
           // 文件日志：记录普通步骤输出
@@ -612,13 +650,6 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
     options?: { signal?: AbortSignal }
   ): Promise<TradeAgentOutput> {
     this.log(`开始为股票 ${input.symbol} 进行分析...`);
-
-    // 统一模型配置（供研究员与经理使用）
-    const modelConfig: Model = {
-      provider: "openrouter",
-      model_name: "z-ai/glm-4.5-air:free",
-      api_key: process.env.OPENROUTER_API_KEY,
-    };
 
     // 初始化聚合状态（满足 AgentState 结构）
     const today = new Date().toISOString().split("T")[0];
@@ -664,8 +695,8 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
     const steps = this.buildStepsFromConfig(
       debateRoundsByGroupOverride,
       debateRoundsOverride,
-      modelConfig,
-      input.memory_override
+      input.memory_override,
+      input.model_override
     );
 
     // 文件日志：记录一次完整分析的开始（包含覆盖项与模型配置）
@@ -674,10 +705,7 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
       debate_rounds_by_group: debateRoundsByGroupOverride,
       debate_rounds: debateRoundsOverride,
       memory_override: input.memory_override,
-      model: {
-        provider: modelConfig.provider,
-        model_name: modelConfig.model_name,
-      },
+      model_override: input.model_override,
       steps_count: steps.length,
     });
 
