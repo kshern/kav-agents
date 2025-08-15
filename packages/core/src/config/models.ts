@@ -16,49 +16,24 @@ function defaultModel(): Model {
 }
 
 /**
- * 从环境变量读取并覆盖模型配置（按前缀分类）
- * 环境变量键格式：
- * - `${prefix}_PROVIDER`
- * - `${prefix}_MODEL`
- * - `${prefix}_API_KEY`
- * - `${prefix}_BASE_URL`
- * 例如：LLM_NEWS_MODEL、LLM_NEWS_PROVIDER ...
- */
-function modelFromEnv(prefix: string, fallback: Model): Model {
-  // 为每个能力生成独立对象，避免引用共享
-  const base: Model = { ...fallback };
-  const provider = process.env[`${prefix}_PROVIDER`];
-  const modelName = process.env[`${prefix}_MODEL`];
-  const apiKey = process.env[`${prefix}_API_KEY`];
-  const baseUrl = process.env[`${prefix}_BASE_URL`];
-  return {
-    provider: provider || base.provider,
-    model_name: modelName || base.model_name,
-    api_key: apiKey || base.api_key,
-    base_url: baseUrl || base.base_url,
-  };
-}
-
-/**
  * 每个能力的默认模型配置映射
- * 说明：当前全部指向相同默认模型，保留按能力差异化的能力以便未来细化。
+ * 说明：提供静态默认；实际生效由编排层合并步骤/分组/成员/运行时覆盖确定。
  */
 export const abilityModelConfigs = {
-  // 分析类能力：支持通过环境变量独立覆盖
-  // 例：LLM_FUNDAMENTALS_MODEL / LLM_FUNDAMENTALS_PROVIDER / LLM_FUNDAMENTALS_API_KEY / LLM_FUNDAMENTALS_BASE_URL
-  fundamentalsAnalyst: modelFromEnv("LLM_FUNDAMENTALS", defaultModel()),
-  marketAnalyst: modelFromEnv("LLM_MARKET", defaultModel()),
-  newsAnalyst: modelFromEnv("LLM_NEWS", defaultModel()),
-  socialMediaAnalyst: modelFromEnv("LLM_SOCIAL", defaultModel()),
-  // 研究员与辩手/经理/交易员：同理可分别定制
-  bullResearcher: modelFromEnv("LLM_BULL_RESEARCHER", defaultModel()),
-  bearResearcher: modelFromEnv("LLM_BEAR_RESEARCHER", defaultModel()),
-  researchManager: modelFromEnv("LLM_RESEARCH_MANAGER", defaultModel()),
-  trader: modelFromEnv("LLM_TRADER", defaultModel()),
-  debateAggressive: modelFromEnv("LLM_DEBATE_AGGRESSIVE", defaultModel()),
-  debateNeutral: modelFromEnv("LLM_DEBATE_NEUTRAL", defaultModel()),
-  debateConservative: modelFromEnv("LLM_DEBATE_CONSERVATIVE", defaultModel()),
-  riskManager: modelFromEnv("LLM_RISK_MANAGER", defaultModel()),
+  // 分析类能力
+  fundamentalsAnalyst: defaultModel(),
+  marketAnalyst: defaultModel(),
+  newsAnalyst: defaultModel(),
+  socialMediaAnalyst: defaultModel(),
+  // 研究员与辩手/经理/交易员
+  bullResearcher: defaultModel(),
+  bearResearcher: defaultModel(),
+  researchManager: defaultModel(),
+  trader: defaultModel(),
+  debateAggressive: defaultModel(),
+  debateNeutral: defaultModel(),
+  debateConservative: defaultModel(),
+  riskManager: defaultModel(),
 } as const;
 
 /**
