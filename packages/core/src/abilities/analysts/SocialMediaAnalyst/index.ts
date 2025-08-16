@@ -7,7 +7,7 @@
 import { parseAndRenderTemplate } from "../../../utils";
 import { loadTemplate } from "../../../utils/templateLoader"; // 动态加载模板，兼容Vite和Node环境
 import { generateContent } from "../../../models/gateway";
-import { getModelConfig } from "../../../config/models"; // 集中式模型配置
+import { getModelConfig } from "../../../pipeline/modelResolver"; // 集中式模型配置
 import type { SocialMediaAnalystProps } from "../../../types"; // 统一使用集中定义的 Props 类型
 // 定义社交媒体帖子的结构
 export interface SocialMediaPost {

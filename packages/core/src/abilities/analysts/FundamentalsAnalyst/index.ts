@@ -6,7 +6,7 @@ import { generateContent } from "../../../models/gateway";
 import { parseAndRenderTemplate } from "../../../utils";
 import { loadTemplate } from "../../../utils/templateLoader";
 import { FundamentalsAnalystProps } from "../../../types";
-import { getModelConfig } from "../../../config/models"; // 集中式模型配置
+import { getModelConfig } from "../../../pipeline/modelResolver"; // 集中式模型配置
 
 // 在 Vite 环境下，您可通过 '?raw' 直接引入模板；此处统一用 loadTemplate 动态加载，无需本地 modelConfig
 /**

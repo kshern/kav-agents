@@ -8,7 +8,7 @@ import { parseAndRenderTemplate } from "../../../utils";
 import { NewsAnalystProps, NewsArticle } from "../../../types";
 import { loadTemplate } from "../../../utils/templateLoader"; // 动态加载模板，兼容Vite和Node环境
 import { generateContent } from "../../../models/gateway";
-import { getModelConfig } from "../../../config/models"; // 集中式模型配置
+import { getModelConfig } from "../../../pipeline/modelResolver"; // 集中式模型配置
 
 // 提示：Vite 环境可通过 '?raw' 直接引入模板；这里统一用 loadTemplate 动态加载，无需本地 modelConfig
 

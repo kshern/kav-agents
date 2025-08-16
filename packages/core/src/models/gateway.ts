@@ -23,6 +23,11 @@ export async function generateContent({
   prompt: string;
 }): Promise<string> {
   // 根据 provider 字段分发到对应的模型服务
+  //  modelConfig = {
+  //   provider: "google",
+  //   model_name: "gemini-2.5-pro",
+  //   api_key: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+  // };
   switch (modelConfig.provider) {
     case "google":
       return generateGeminiContent({ modelConfig, prompt });

@@ -7,7 +7,7 @@ import { parseAndRenderTemplate } from "../../../utils";
 import { loadTemplate } from "../../../utils/templateLoader"; // 动态加载模板，兼容Vite和Node环境
 import { getStockData } from "../../../dataflows/alphaVantageUtils";
 import { MarketAnalystProps } from "../../../types";
-import { getModelConfig } from "../../../config/models"; // 集中式模型配置
+import { getModelConfig } from "../../../pipeline/modelResolver"; // 集中式模型配置
 
 
 /**

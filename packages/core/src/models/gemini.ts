@@ -21,6 +21,7 @@ export async function generateGeminiContent({
   modelConfig: Model;
   prompt: string;
 }): Promise<string> {
+  console.log('google!!')
   const { text } = await generateText({
     model: google(modelConfig.model_name as any),
     tools: {

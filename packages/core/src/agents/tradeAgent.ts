@@ -1,15 +1,13 @@
-import { EventEmitter } from "events";
 import { BaseAgent } from "./BaseAgent";
 import { analyzeFundamentals } from "../abilities/analysts/FundamentalsAnalyst";
 import { analyzeMarket } from "../abilities/analysts/MarketAnalyst";
 import { analyzeNews, createTradePlan, debateAggressive, debateNeutral, debateConservative, manageRisk } from "../abilities";
 import { manageResearch } from "../abilities/managers/ResearchManager";
 import type { CommonAbility } from "../types";
-import { runStepsStateful, StatefulStep } from "../pipeline/executor";
+import { StatefulStep } from "../pipeline/executor";
 import type {
   TradeAgentOutput,
   TradeStepConfig,
-  ProgressEvent,
   PipelineItemConfig,
   DebateGroupConfig,
   DebateMemberConfig,
@@ -19,8 +17,8 @@ import { researchBull } from "../abilities/researchers/BullResearcher";
 import { researchBear } from "../abilities/researchers/BearResearcher";
 // import { manageResearch } from "../abilities/managers/ResearchManager";
 import type { AgentState, Model } from "../types";
-import { getModelConfig as getAbilityDefaultModel, mergeModelConfig } from "../config/models";
-import type { AbilityKey } from "../config/models";
+import { getModelConfig as getAbilityDefaultModel, mergeModelConfig } from "../pipeline/modelResolver";
+import type { AbilityKey } from "../pipeline/modelResolver";
 import { FileLogger } from "../utils/logger";
 
 /**
@@ -45,20 +43,7 @@ export interface TradeAgentInput {
  */
 export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
   protected readonly name = "TradeAgent";
-  private eventEmitter = new EventEmitter();
-  // 文件日志，记录每一步输入输出，便于离线分析
-  private logger = new FileLogger("logs/trade-agent.log");
-  // 进度事件的元信息映射：按步骤ID存储分组/轮次/成员等，供前端分组渲染
-  private progressMetaByStepId: Record<
-    string,
-    {
-      itemType: "step" | "debate";
-      debateGroup?: string;
-      debateRound?: number;
-      debateMemberId?: string;
-      debateMemberText?: string;
-    }
-  > = {};
+  // 文件日志，记录每一步输入输出，便于离线分析（通过基类的 logger 接口注入）
 
   /**
    * 全局默认记忆策略（当未在运行时/成员/分组指定时生效）
@@ -318,6 +303,8 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
    */
   constructor() {
     super();
+    // 注入文件日志器到基类的 logger 接口
+    this.logger = new FileLogger("logs/trade-agent.log");
     this.registerAbility("fundamentalsAnalyst", analyzeFundamentals);
     this.registerAbility("marketAnalyst", analyzeMarket);
     this.registerAbility("newsAnalyst", analyzeNews);
@@ -333,30 +320,6 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
     this.registerAbility("debateNeutral", debateNeutral);
     this.registerAbility("debateConservative", debateConservative);
     this.registerAbility("riskManager", manageRisk);
-  }
-
-  /**
-   * 订阅进度事件
-   * @param listener 事件监听器
-   */
-  public onProgress(listener: (event: ProgressEvent) => void): void {
-    this.eventEmitter.on("progress", listener);
-  }
-
-  /**
-   * 取消订阅进度事件
-   * @param listener 事件监听器
-   */
-  public offProgress(listener: (event: ProgressEvent) => void): void {
-    this.eventEmitter.off("progress", listener);
-  }
-
-  /**
-   * 发送进度事件
-   * @param event 进度事件数据
-   */
-  private emitProgress(event: ProgressEvent): void {
-    this.eventEmitter.emit("progress", event);
   }
 
   /**
@@ -388,42 +351,6 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
       : hasGlobalOverride
         ? (globalOverride as number)
         : groupDefault;
-  }
-
-  /**
-   * 根据配置 inputs 动态构造能力所需的 state 片段
-   */
-  private buildDynamicState(
-    inputKeys: string[],
-    state: AgentState
-  ): Record<string, unknown> {
-    const dynamicState: Record<string, unknown> = {};
-    for (const key of inputKeys) {
-      // 只按 keys 取已有值，不注入任何默认值
-      const val = (state as unknown as Record<string, unknown>)[key];
-      if (val !== undefined) {
-        dynamicState[key] = val;
-      }
-    }
-    return dynamicState;
-  }
-
-  /**
-   * 按 outputs 抽取结果片段，缺失则从旧 state 透传
-   */
-  private extractOutputs(
-    outputKeys: string[],
-    rawResult: Record<string, unknown>,
-    state: AgentState
-  ): Record<string, unknown> {
-    return outputKeys.reduce<Record<string, unknown>>((acc, key) => {
-      const v = rawResult[key];
-      acc[key] =
-        v !== undefined
-          ? v
-          : (state as unknown as Record<string, unknown>)[key];
-      return acc;
-    }, {});
   }
 
   /**
@@ -467,7 +394,7 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
         this.defaultMemory;
 
       // 输入日志
-      await this.logger.info("TradeAgent", "辩论步骤输入", {
+      await this.logger!.info("TradeAgent", "辩论步骤输入", {
         stepId,
         text: `${member.text}（第${round}轮）`,
         // 同时输出 ability 与兼容字段 analyst
@@ -501,7 +428,7 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
       const rawResult = rawResultUnknown as Record<string, unknown>;
 
       // 原始输出日志
-      await this.logger.info("TradeAgent", "辩论步骤原始输出", {
+      await this.logger!.info("TradeAgent", "辩论步骤原始输出", {
         stepId,
         ability: abilityKey,
         analyst: abilityKey,
@@ -511,7 +438,7 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
       // 输出提取与日志
       const outputKeys = member.outputs ?? [];
       const partial = this.extractOutputs(outputKeys, rawResult, state);
-      await this.logger.info("TradeAgent", "辩论步骤提取输出", {
+      await this.logger!.info("TradeAgent", "辩论步骤提取输出", {
         stepId,
         outputs: outputKeys,
         partial,
@@ -552,13 +479,13 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
           for (const m of members) {
             const stepId = `${groupKey}__${m.id}_r${i}`;
             // 记录分组元信息，供进度事件携带
-            this.progressMetaByStepId[stepId] = {
+            this.setStepMeta(stepId, {
               itemType: "debate",
               debateGroup: groupKey,
               debateRound: i,
               debateMemberId: m.id,
               debateMemberText: m.text,
-            };
+            });
             // 计算该成员本轮的有效模型配置：默认(按能力) -> 分组级覆盖 -> 成员级覆盖 -> 运行时覆盖
             const abilityKey = m.ability as AbilityKey;
             const effectiveModel = this.resolveEffectiveModel(abilityKey, [
@@ -588,7 +515,7 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
       // 分支2：普通步骤（AnalysisStepConfig）
       const cfg = item as TradeStepConfig;
       // 记录普通步骤的元信息
-      this.progressMetaByStepId[cfg.id] = { itemType: "step" };
+      this.setStepMeta(cfg.id, { itemType: "step" });
       steps.push({
         id: cfg.id,
         text: cfg.text,
@@ -609,7 +536,7 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
             runtimeModelOverride,
           ]);
           // 文件日志：记录普通步骤输入
-          this.logger.info("TradeAgent", "普通步骤输入", {
+          this.logger!.info("TradeAgent", "普通步骤输入", {
             stepId: cfg.id,
             text: cfg.text,
             ability: abilityKey,
@@ -627,7 +554,7 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
             memory_config: effectiveMemory,
           });
           // 文件日志：记录普通步骤输出
-          this.logger.info("TradeAgent", "普通步骤输出", {
+          this.logger!.info("TradeAgent", "普通步骤输出", {
             stepId: cfg.id,
             ability: abilityKey,
             rawResult: res,
@@ -690,8 +617,6 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
       Number.isInteger(input.debate_rounds)
         ? Math.max(1, input.debate_rounds)
         : undefined;
-    // 重置进度元信息映射，避免跨次运行污染
-    this.progressMetaByStepId = {};
     const steps = this.buildStepsFromConfig(
       debateRoundsByGroupOverride,
       debateRoundsOverride,
@@ -700,7 +625,7 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
     );
 
     // 文件日志：记录一次完整分析的开始（包含覆盖项与模型配置）
-    await this.logger.info("TradeAgent", "分析开始", {
+    await this.logger!.info("TradeAgent", "分析开始", {
       symbol: input.symbol,
       debate_rounds_by_group: debateRoundsByGroupOverride,
       debate_rounds: debateRoundsOverride,
@@ -710,39 +635,15 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
     });
 
     try {
-      const results = await runStepsStateful<AgentState>(steps, initialState, {
-        onProgress: (e) => {
-          const meta = this.progressMetaByStepId[e.stepId];
-          this.emitProgress({
-            stepId: e.stepId,
-            stepText: e.stepText,
-            status: e.status,
-            progress: e.progress,
-            result: e.result,
-            error: e.error,
-            // 附带元信息，前端即可按分组/轮次区分 UI
-            itemType: meta?.itemType ?? "step",
-            debateGroup: meta?.debateGroup,
-            debateRound: meta?.debateRound,
-            debateMemberId: meta?.debateMemberId,
-            debateMemberText: meta?.debateMemberText,
-          });
-        },
-        abortSignal: options?.signal,
-      });
-
-      // 发送最终完成事件（由核心统一发出，避免路由层重复拼装）
-      this.emitProgress({
-        stepId: "final",
-        stepText: "分析完成",
-        status: "completed",
-        progress: 100,
-        result: results,
-      });
+      const results = await this.executeSteps<AgentState>(
+        steps,
+        initialState,
+        options,
+      );
 
       this.log(`股票 ${input.symbol} 的分析完成.`);
       // 文件日志：记录分析完成（不重复落完整结果，避免日志过大）
-      await this.logger.info("TradeAgent", "分析完成", {
+      await this.logger!.info("TradeAgent", "分析完成", {
         symbol: input.symbol,
         steps_count: steps.length,
       });
