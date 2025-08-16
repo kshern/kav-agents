@@ -46,6 +46,13 @@ export class TradeAgent extends BaseAgent<TradeAgentInput, TradeAgentOutput> {
   // 文件日志，记录每一步输入输出，便于离线分析（通过基类的 logger 接口注入）
 
   /**
+   * 允许为本次会话设置独立的日志文件（例如 data/<analysisId>.jsonl）
+   */
+  public setLogFile(filePath: string): void {
+    this.setLogger(new FileLogger(filePath));
+  }
+
+  /**
    * 全局默认记忆策略（当未在运行时/成员/分组指定时生效）
    * 对齐 Python：默认采用情境检索 topK=2
    */

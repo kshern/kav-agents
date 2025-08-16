@@ -26,6 +26,17 @@ export abstract class BaseAgent<TInput = unknown, TOutput = unknown> {
     debug(scope: string, message: string, data?: unknown): Promise<void>;
   };
 
+  /**
+   * 允许外部注入/覆盖日志器（例如为每次会话写入单独的 JSONL 文件）
+   */
+  public setLogger(logger: {
+    info(scope: string, message: string, data?: unknown): Promise<void>;
+    error(scope: string, message: string, data?: unknown): Promise<void>;
+    debug(scope: string, message: string, data?: unknown): Promise<void>;
+  }): void {
+    this.logger = logger;
+  }
+
   /** 步骤元信息：用于前端分组渲染（如辩论分组/轮次/成员） */
   private readonly stepMeta: Record<string, {
     itemType: "step" | "debate";

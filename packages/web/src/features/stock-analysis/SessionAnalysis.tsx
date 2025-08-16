@@ -54,7 +54,9 @@ const SessionAnalysis: React.FC<SessionAnalysisProps> = ({ analysisId }) => {
           正在为您生成深度分析报告
         </CardDescription>
       </CardHeader>
-      <CardContent><ProgressTracker steps={steps} overallProgress={progress} /></CardContent>
+      <CardContent>
+        <ProgressTracker steps={steps} overallProgress={progress} />
+      </CardContent>
     </Card>
   );
 };

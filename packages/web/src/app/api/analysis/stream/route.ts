@@ -3,6 +3,9 @@ import { TradeAgent, ProgressEvent } from "@core/server";
 import { appendEvent } from "@/server/analysisStore";
 import { readSessionSymbol } from "@/server/analysisSession";
 import { createSupabaseServerClient } from "@/server/supabase/client";
+import path from "node:path";
+import { appendJSONLSafe } from "@/server/utils/jsonl";
+import type { StoredLine } from "@/server/analysisStore";
 
 export const runtime = "nodejs";
 
@@ -61,16 +64,23 @@ export async function GET(request: NextRequest) {
 
   const encoder = new TextEncoder();
 
-  // 统一存储接口封装（JSONL/SQL 可替换）
+  // 统一存储接口封装（写入本地 JSONL；可并行接入 Supabase 持久化）
   const writeLine = async (
     type: "started" | "progress" | "final" | "error" | "aborted",
     event?: unknown
   ) => {
     try {
-      // 这里把 Supabase 客户端传入，使“完成态/错误态”事件能写入云端表 public.analysis_events
-      // 新签名：appendEvent(analysisId, type, event?, ts?, supabase?)
-      // 数据量比较大，暂时不用
-      // await appendEvent(analysisId, type, event, new Date().toISOString(), supabase);
+      const ts = new Date().toISOString();
+      const line: StoredLine = {
+        analysisId,
+        symbol,
+        ts,
+        payload: type === "aborted" ? { type } : { type, event },
+      };
+      const filePath = path.resolve(process.cwd(), "data", `${analysisId}.jsonl`);
+      await appendJSONLSafe(filePath, line);
+      // 可选：仅在完成/错误态写入 Supabase，避免高频 IO
+      // await appendEvent(analysisId, type, event, ts, supabase);
     } catch {}
   };
 
@@ -78,6 +88,11 @@ export async function GET(request: NextRequest) {
   const stream = new ReadableStream({
     start(controller) {
       const tradeAgent = new TradeAgent();
+      // 为本会话设置详细步骤日志文件（包含步骤输入/输出/模型/记忆等）
+      try {
+        const stepsLogPath = path.resolve(process.cwd(), "data", `${analysisId}.steps.jsonl`);
+        tradeAgent.setLogFile(stepsLogPath);
+      } catch {}
       let aborted = false;
 
       // 监听进度事件

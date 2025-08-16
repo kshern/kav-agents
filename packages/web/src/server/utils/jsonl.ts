@@ -139,3 +139,27 @@ export async function appendJSONLSafe<T>(filePath: string, record: T, opts: File
     await appendJSONL(filePath, record);
   }, opts);
 }
+
+/**
+ * 读取 JSONL 文件的所有行并解析为对象数组。
+ * 解析失败的行将被跳过，空行将被忽略。
+ */
+export async function readJSONL<T>(filePath: string): Promise<T[]> {
+  try {
+    const { readFile } = await import("fs/promises");
+    const buf = await readFile(filePath, { encoding: "utf-8" });
+    const out: T[] = [];
+    for (const line of buf.split("\n")) {
+      const s = line.trim();
+      if (!s) continue;
+      try {
+        out.push(JSON.parse(s) as T);
+      } catch {
+        // 跳过无法解析的行
+      }
+    }
+    return out;
+  } catch {
+    return [] as T[];
+  }
+}
