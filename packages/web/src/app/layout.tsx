@@ -1,4 +1,5 @@
  import type { Metadata } from "next";
+import Link from "next/link";
 import "./globals.css";
 import AuthStatus from "@/components/AuthStatus";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -26,7 +27,7 @@ export default function RootLayout({
         {/* 顶部导航：显示登录状态与入口 + 主题切换 */}
         <header className={cn('header')}>
           <div className={cn('headerInner')}>
-            <a href="/" className="font-semibold tracking-tight bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">KAV Agents</a>
+            <Link href="/" className="font-semibold tracking-tight bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">KAV Agents</Link>
             <div className={cn('headerRight')}>
               <ThemeToggle />
               <AuthStatus />

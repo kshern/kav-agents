@@ -6,7 +6,7 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 export async function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   // 先构造一个可携带 Set-Cookie 的响应，用于 Supabase 在中间件中刷新会话
-  let res = NextResponse.next();
+  const res = NextResponse.next();
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_KEY;
   if (!url || !key) {

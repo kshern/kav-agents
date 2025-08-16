@@ -113,6 +113,10 @@ export type PipelineItemConfig = TradeStepConfig | DebateGroupConfig;
  * 更通用的别名，供逐步迁移使用
  */
 export type StepConfig = TradeStepConfig;
+/**
+ * 兼容旧命名：AnalysisStepConfig 等价于 TradeStepConfig
+ */
+export type AnalysisStepConfig = TradeStepConfig;
 export type WorkflowItemConfig = PipelineItemConfig;
 
 export type StepStatus = "started" | "completed" | "error";

@@ -1,13 +1,14 @@
 "use client";
-import React, { useState } from "react";
+import React, { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 // 页面布局切换为 module.scss + classnames/bind
 import classnames from 'classnames/bind';
 import styles from './index.module.scss';
 const cn = classnames.bind(styles);
 
 // 登录页面（客户端组件）
-export default function LoginPage() {
+function LoginPageInner() {
   // 表单状态（避免使用 any）
   // 允许输入邮箱（当前 Supabase 登录仅支持邮箱+密码）
   const [identifier, setIdentifier] = useState<string>("");
@@ -79,10 +80,18 @@ export default function LoginPage() {
           {loading ? "登录中..." : "登录"}
         </button>
         <p className="text-sm text-gray-600 mt-2">
-          还没有账号？<a href="/register" className="underline">去注册</a>
+          还没有账号？<Link href="/register" className="underline">去注册</Link>
         </p>
         <p className="text-xs text-gray-500">当前使用 Supabase 认证，暂仅支持邮箱+密码登录</p>
       </form>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div />}> 
+      <LoginPageInner />
+    </Suspense>
   );
 }

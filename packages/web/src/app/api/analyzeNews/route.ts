@@ -12,8 +12,9 @@ import { Model } from "@core/types";
  */
 interface AnalyzeNewsRequest {
   company_of_interest: string;
-  modelConfig: Model;
+  modelConfig?: Model;
   trade_date: string;
+  [key: string]: unknown;
 }
 
 /**
