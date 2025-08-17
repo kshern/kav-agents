@@ -1,0 +1,48 @@
+---
+# 自动生成文档（草稿）
+# 请补充描述，并在完善后移除该提示
+---
+
+# packages/web/src/components/StockInputForm.tsx
+
+> 本文档由脚本自动生成，旨在作为初稿。请在代码变更后同步维护。
+
+## 概述
+
+- 文件职责：<简述该文件做什么>
+- 上下文/模块：<相关子系统或域>
+
+## 位置与命名
+
+- 相对路径：`packages/web/src/components/StockInputForm.tsx`
+- 同名文档：同目录下同名 .md
+
+## 导出清单
+
+### default StockInputForm
+
+- 形态: default
+- 名称: StockInputForm
+- 参数:
+- (无参数)
+- 返回: <返回值说明 / 类型>
+
+## 主要依赖
+
+- 外部依赖(6)：`react`, `classnames/bind`, `@/components/ui/input`, `@/components/ui/button`, `lucide-react`, `@/types`
+- 本地依赖(1)：`./StockInputForm.module.scss`
+
+## 输入 / 输出
+
+- 输入：<参数、上下文、事件、数据流>
+- 输出：<返回值、产生的副作用、事件、持久化>
+
+## 使用示例
+
+~~~ts
+// TODO: 提供一个最小示例
+~~~
+
+## 变更记录
+
+- 生成时间：2025-08-16T09:43:34.528Z
