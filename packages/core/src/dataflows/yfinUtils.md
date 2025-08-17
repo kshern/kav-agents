@@ -1,16 +1,9 @@
----
-# 自动生成文档（草稿）
-# 请补充描述，并在完善后移除该提示
----
-
 # packages/core/src/dataflows/yfinUtils.ts
-
-> 本文档由脚本自动生成，旨在作为初稿。请在代码变更后同步维护。
 
 ## 概述
 
-- 文件职责：<简述该文件做什么>
-- 上下文/模块：<相关子系统或域>
+- 文件职责：对 `yahoo-finance2` 进行轻量封装，提供历史行情、摘要信息、公司信息与三大报表等查询工具类。
+- 上下文/模块：`dataflows` 金融数据源适配层；供上层分析能力与 Agent 在流水线中调用。
 
 ## 位置与命名
 
@@ -19,30 +12,47 @@
 
 ## 导出清单
 
-### class YFinanceUtils
-
-- 形态: class
-- 名称: YFinanceUtils
-- 参数:
-- (无参数)
-- 返回: <返回值说明 / 类型>
+- class `YFinanceUtils`
+  - `getStockData(symbol: string, startDate: string, endDate: string)` → 历史价格数组（yahoo-finance2 `historical` 原样返回）
+  - `getStockInfo(symbol: string): Promise<ExtendedQuote>` → 最新 Quote（扩展字段：`longName`、`industry`、`sector`、`country`、`website` 等）
+  - `getCompanyInfo(symbol: string)` → 提取并返回公司名/行业/板块/国家/网站的精简对象
+  - `getStockDividends(symbol: string)` → 目前占位，返回空数组（可按需扩展）
+  - `getIncomeStmt(symbol: string): Promise<any>` → `quoteSummary` 模块 `incomeStatementHistory`
+  - `getBalanceSheet(symbol: string): Promise<any>` → `quoteSummary` 模块 `balanceSheetHistory`
+  - `getCashFlow(symbol: string): Promise<any>` → `quoteSummary` 模块 `cashflowStatementHistory`
+  - `getAnalystRecommendations(symbol: string): Promise<any>` → `quoteSummary` 模块 `recommendationTrend`
 
 ## 主要依赖
 
-- 外部依赖(1)：`yahoo-finance2`
-- 本地依赖(0)：无
+- 外部依赖：`yahoo-finance2`
+- 环境变量：无（默认直连 yahoo-finance2）
+- 本地依赖：无
 
 ## 输入 / 输出
 
-- 输入：<参数、上下文、事件、数据流>
-- 输出：<返回值、产生的副作用、事件、持久化>
+- 输入：
+  - `symbol: string` 股票代码
+  - `startDate: string` / `endDate: string`（仅 `getStockData` 使用，YYYY-MM-DD）
+- 输出：
+  - 各方法返回 `Promise<...>`，与 `yahoo-finance2` 对应模块的返回结构保持一致或做轻度整理
+  - 错误：网络或第三方 API 调用异常将向上抛出
 
 ## 使用示例
 
-~~~ts
-// TODO: 提供一个最小示例
-~~~
+```ts
+import { YFinanceUtils } from "../dataflows/yfinUtils";
+
+async function main() {
+  const yfin = new YFinanceUtils();
+  const history = await yfin.getStockData("AAPL", "2024-01-01", "2024-01-31");
+  const info = await yfin.getStockInfo("AAPL");
+  const company = await yfin.getCompanyInfo("AAPL");
+  console.log(history.length, info.longName, company);
+}
+
+main().catch(console.error);
+```
 
 ## 变更记录
 
-- 生成时间：2025-08-16T09:43:34.512Z
+- 最后更新：2025-08-17

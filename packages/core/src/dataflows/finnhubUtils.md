@@ -1,16 +1,9 @@
----
-# 自动生成文档（草稿）
-# 请补充描述，并在完善后移除该提示
----
-
 # packages/core/src/dataflows/finnhubUtils.ts
-
-> 本文档由脚本自动生成，旨在作为初稿。请在代码变更后同步维护。
 
 ## 概述
 
-- 文件职责：<简述该文件做什么>
-- 上下文/模块：<相关子系统或域>
+- 文件职责：从本地磁盘读取并筛选预先格式化的 Finnhub 数据，支持按日期范围与可选周期过滤。
+- 上下文/模块：`dataflows` 本地数据适配层；供上层分析能力与 Agent 流水线复用。
 
 ## 位置与命名
 
@@ -19,24 +12,47 @@
 
 ## 导出清单
 
-_未检测到导出（或解析失败，需手工补充）_
+- function `getDataInRange(ticker: string, startDate: string, endDate: string, dataType: string, dataDir: string, period?: 'annual' | 'quarterly'): Promise<Record<string, any>>`
+  - 描述：根据 `ticker`、日期范围、数据类型与根目录读取文件并筛选非空条目；可选按 `period` 选择年度/季度数据文件。
 
 ## 主要依赖
 
-- 外部依赖(2)：`fs/promises`, `path`
-- 本地依赖(0)：无
+- 外部依赖：`fs/promises`、`path`
+- 本地依赖：无
 
 ## 输入 / 输出
 
-- 输入：<参数、上下文、事件、数据流>
-- 输出：<返回值、产生的副作用、事件、持久化>
+- 输入：
+  - `ticker: string` 股票代码
+  - `startDate: string` 开始日期（YYYY-MM-DD）
+  - `endDate: string` 结束日期（YYYY-MM-DD）
+  - `dataType: string` 数据类型（如 `insider_trans`, `SEC_filings` 等）
+  - `dataDir: string` 数据根目录
+  - `period?: 'annual' | 'quarterly'` 可选周期
+- 输出：
+  - `Promise<Record<string, any>>` 过滤后的对象，保留日期键在范围内且值为非空数组的条目
+  - 错误处理：文件读取/解析异常将记录日志并返回空对象 `{}`
 
 ## 使用示例
 
-~~~ts
-// TODO: 提供一个最小示例
-~~~
+```ts
+import { getDataInRange } from "../dataflows/finnhubUtils";
+
+async function main() {
+  const data = await getDataInRange(
+    "AAPL",
+    "2023-01-01",
+    "2023-12-31",
+    "SEC_filings",
+    "/abs/path/to/data",
+    "annual",
+  );
+  console.log(Object.keys(data));
+}
+
+main().catch(console.error);
+```
 
 ## 变更记录
 
-- 生成时间：2025-08-16T09:43:34.511Z
+- 最后更新：2025-08-17

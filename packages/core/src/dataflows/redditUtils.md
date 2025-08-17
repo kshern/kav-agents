@@ -1,16 +1,9 @@
----
-# 自动生成文档（草稿）
-# 请补充描述，并在完善后移除该提示
----
-
 # packages/core/src/dataflows/redditUtils.ts
-
-> 本文档由脚本自动生成，旨在作为初稿。请在代码变更后同步维护。
 
 ## 概述
 
-- 文件职责：<简述该文件做什么>
-- 上下文/模块：<相关子系统或域>
+- 文件职责：从本地 JSONL Reddit 数据集中按分类与日期筛选热门帖子，支持可选关键词（含股票代码到公司名的简单映射）。
+- 上下文/模块：`dataflows` 本地数据适配层；供上层社媒分析能力与 Agent 流水线复用。
 
 ## 位置与命名
 
@@ -19,30 +12,46 @@
 
 ## 导出清单
 
-### interface RedditPost
-
-- 形态: interface
-- 名称: RedditPost
-- 参数:
-- (无参数)
-- 返回: <返回值说明 / 类型>
+- interface `RedditPost`
+  - `{ title: string; content: string; url: string; upvotes: number; posted_date: string; }`
+- function `fetchTopFromCategory(category: string, date: string, maxLimit: number, query?: string, dataPath?: string): Promise<RedditPost[]>`
+  - 描述：遍历 `dataPath/category` 下各子文件的 `.jsonl`，按日期过滤、按 `upvotes` 排序并按子版块限额汇总后返回。
 
 ## 主要依赖
 
-- 外部依赖(4)：`fs/promises`, `path`, `readline`, `fs`
-- 本地依赖(0)：无
+- 外部依赖：`fs/promises`、`path`、`readline`、`fs`（`createReadStream`）
+- 本地依赖：无
 
 ## 输入 / 输出
 
-- 输入：<参数、上下文、事件、数据流>
-- 输出：<返回值、产生的副作用、事件、持久化>
+- 输入：
+  - `category: string` 类别目录名（例如 `company_discussions`）
+  - `date: string` 目标日期（YYYY-MM-DD）
+  - `maxLimit: number` 结果总上限（按子版块平均分配）
+  - `query?: string` 可选搜索词；当 `category` 含 `company` 时会对股票代码做公司名扩展匹配
+  - `dataPath: string = 'reddit_data'` 根数据目录
+- 输出：
+  - `Promise<RedditPost[]>` 筛选后的帖子列表；读取/解析异常时返回空数组 `[]`
 
 ## 使用示例
 
-~~~ts
-// TODO: 提供一个最小示例
-~~~
+```ts
+import { fetchTopFromCategory } from "../dataflows/redditUtils";
+
+async function main() {
+  const posts = await fetchTopFromCategory(
+    "company_discussions",
+    "2024-01-05",
+    50,
+    "AAPL",
+    "/abs/path/to/reddit_data",
+  );
+  console.log(posts.slice(0, 5));
+}
+
+main().catch(console.error);
+```
 
 ## 变更记录
 
-- 生成时间：2025-08-16T09:43:34.512Z
+- 最后更新：2025-08-17
