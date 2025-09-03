@@ -22,7 +22,10 @@
     "paths": {
       "@/*": ["src/*"],
       "@core": ["../core/src"],
-      "@core/*": ["../core/src/*"]
+      "@core/*": ["../core/src/*"],
+      "core": ["../core/src/index"],
+      "datasources": ["../datasources/src/index"],
+      "datasources/*": ["../datasources/src/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "**/*.d.ts", ".next/types/**/*.ts"],

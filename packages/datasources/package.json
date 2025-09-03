@@ -1,0 +1,39 @@
+{
+  "name": "datasources",
+  "version": "0.1.0",
+  "description": "服务端数据源适配层（如问财抓取、第三方数据对接）",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "bin": {
+    "wencai-news": "dist/cli/wencai_news.js",
+    "tushare-call": "dist/cli/tushare_call.js"
+  },
+  "files": ["dist", "src"],
+  "scripts": {
+    "build": "tsc -p ./tsconfig.json",
+    "dev": "tsc -w -p ./tsconfig.json",
+    "cli:wencai-news": "tsx src/cli/wencai_news.ts",
+    "cli:wencai-news:batch": "tsx src/cli/wencai_news_batch.ts",
+    "cli:tushare-call": "tsx src/cli/tushare_call.ts"
+  },
+  "dependencies": {
+    "puppeteer": "^22.10.0",
+    "dotenv": "^16.4.5",
+    "@tushare/sdk": "^1.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.16.10",
+    "typescript": "^5.4.0",
+    "tsx": "^4.15.7"
+  }
+}
