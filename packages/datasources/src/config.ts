@@ -38,6 +38,8 @@ export interface BatchConfig {
   defaultTimeoutMs: number;
   // 每条请求之间默认间隔
   defaultSleepMs: number;
+  // 每只股票单次抓取的最大新闻条数（用于写入前截断，避免过多数据写入）
+  defaultItemsLimit: number;
 }
 
 export interface DatasourcesConfig {
@@ -64,6 +66,7 @@ export const config: DatasourcesConfig = {
     defaultInputPath: 'data/wencai/symbols.jsonl',
     defaultOutDir: 'data/wencai/news',
     defaultTimeoutMs: 60_000,
-    defaultSleepMs: 0
+    defaultSleepMs: 0,
+    defaultItemsLimit: 50
   }
 };

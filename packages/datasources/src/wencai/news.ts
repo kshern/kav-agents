@@ -20,7 +20,7 @@ export type WencaiNewsResponse = unknown;
  * - 监听该请求的响应并解析 JSON 返回
  * - 仅在 Node.js 运行时可用，不适用于 Edge Runtime
  */
-export async function fetchWencaiNews(symbol: string, options?: { timeoutMs?: number }): Promise<WencaiNewsResponse> {
+export async function fetchWencaiNews(symbol: string, options?: { timeoutMs?: number; limit?: number }): Promise<WencaiNewsResponse> {
   // 参数校验：symbol 必须存在
   if (!symbol || typeof symbol !== 'string') {
     throw new Error('symbol 不能为空');
@@ -35,9 +35,36 @@ export async function fetchWencaiNews(symbol: string, options?: { timeoutMs?: nu
 
     const page: Page = await browser.newPage();
 
-    // 开启请求拦截（此处不修改请求，仅为可扩展预留）
+    // 开启请求拦截：当命中目标 API 时，按需重写 POST 体以控制 size（实际取样条数）
     await page.setRequestInterception(true);
     page.on('request', (req: HTTPRequest) => {
+      try {
+        const isTarget = req.url() === config.wencai.targetUrl && req.method() === config.wencai.responseMethod;
+        if (isTarget && options?.limit && options.limit > 0) {
+          const headers = req.headers();
+          const contentType = headers['content-type'] || headers['Content-Type'] || '';
+          // 问财接口通常为 application/json；我们尽量在保持原有结构的情况下仅覆盖 size 字段
+          if (contentType.includes('application/json')) {
+            const raw = req.postData() ?? '';
+            try {
+              const body = raw ? JSON.parse(raw) as Record<string, unknown> : {};
+              // 写入 size（使用传入的 limit），若无 offset 则默认 0
+              body.size = options.limit;
+              if (typeof body.offset === 'undefined') {
+                body.offset = 0;
+              }
+              const postData = JSON.stringify(body);
+              // 注意：不强制重写 content-length，Puppeteer 会处理；如遇 411/长度异常再补充
+              req.continue({ postData });
+              return;
+            } catch {
+              // JSON 解析失败则回退为不拦截
+            }
+          }
+        }
+      } catch {
+        // 拦截器内部错误不应影响主流程
+      }
       req.continue();
     });
 
