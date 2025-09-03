@@ -31,7 +31,7 @@ export async function fetchWencaiNews(symbol: string, options?: { timeoutMs?: nu
 
   try {
     // 通过封装的 launcher 统一启动浏览器，内部已处理渠道/路径/Edge 回退等逻辑
-    browser = await launchBrowser({ headless: true, args: config.browser.argsDefault });
+    browser = await launchBrowser({ headless: false, args: config.browser.argsDefault });
 
     const page: Page = await browser.newPage();
 
@@ -43,9 +43,11 @@ export async function fetchWencaiNews(symbol: string, options?: { timeoutMs?: nu
         if (isTarget && options?.limit && options.limit > 0) {
           const headers = req.headers();
           const contentType = headers['content-type'] || headers['Content-Type'] || '';
+          console.log(req.url())
           // 问财接口通常为 application/json；我们尽量在保持原有结构的情况下仅覆盖 size 字段
           if (contentType.includes('application/json')) {
             const raw = req.postData() ?? '';
+            console.log(raw)
             try {
               const body = raw ? JSON.parse(raw) as Record<string, unknown> : {};
               // 写入 size（使用传入的 limit），若无 offset 则默认 0
@@ -59,6 +61,21 @@ export async function fetchWencaiNews(symbol: string, options?: { timeoutMs?: nu
               return;
             } catch {
               // JSON 解析失败则回退为不拦截
+            }
+          }
+          // 兼容 application/x-www-form-urlencoded 表单负载
+          if (contentType.includes('application/x-www-form-urlencoded')) {
+            const raw = req.postData() ?? '';
+            try {
+              const params = new URLSearchParams(raw);
+              // 覆盖 size 与缺省 offset
+              params.set('size', String(options.limit));
+              if (!params.has('offset')) params.set('offset', '0');
+              const postData = params.toString();
+              req.continue({ postData });
+              return;
+            } catch {
+              // 解析失败则回退
             }
           }
         }
